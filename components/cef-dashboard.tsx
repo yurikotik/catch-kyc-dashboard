@@ -25,6 +25,18 @@ interface CEFDashboardProps {
   syncStatus: SyncStatus | null
 }
 
+function formatLastFetched(dateStr: string): string {
+  const date = new Date(dateStr)
+  if (Number.isNaN(date.getTime())) return ""
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  })
+}
+
 function formatAsOf(dateStr: string): string {
   const date = new Date(dateStr)
   if (Number.isNaN(date.getTime())) return ""
@@ -36,11 +48,8 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
 
   const currentMetric = allMetrics.find((m) => m.value === activeMetric)
 
-  const asOfLabel = dataAsOf
-    ? formatAsOf(dataAsOf)
-    : updatedAt
-      ? formatAsOf(updatedAt)
-      : null
+  const lastFetchedLabel = updatedAt ? formatLastFetched(updatedAt) : null
+  const dataDateLabel = dataAsOf ? formatAsOf(dataAsOf) : null
   const isLive = Boolean(updatedAt)
 
   return (
@@ -57,7 +66,7 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
                 TOP 50 CEF INDEX DAILY DATA & RANK
               </p>
             </div>
-            <div className="flex flex-col items-end gap-0.5">
+            <div className="flex flex-col items-end gap-0.5 text-right">
               <div className="flex items-center gap-2">
                 <div
                   className={`w-2 h-2 rounded-full ${
@@ -72,9 +81,20 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
                   {isLive ? "Synced" : "Sample"}
                 </span>
               </div>
-              {asOfLabel && (
-                <span className="text-[9px] text-white/40 font-mono">
-                  As of {asOfLabel}
+              {lastFetchedLabel ? (
+                <span className="text-[10px] text-white/50 font-mono leading-tight">
+                  Last fetched on
+                  <br />
+                  <span className="text-white/70">{lastFetchedLabel}</span>
+                </span>
+              ) : (
+                <span className="text-[10px] text-white/40 font-mono">
+                  Not synced yet
+                </span>
+              )}
+              {dataDateLabel && (
+                <span className="text-[9px] text-white/35 font-mono">
+                  Data as of {dataDateLabel}
                 </span>
               )}
             </div>
