@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { cefData, type SortMetric } from "@/lib/cef-data"
+import type { CEFData, SortMetric } from "@/lib/cef-data"
+import type { SyncStatus } from "@/lib/cef-snapshot"
 import { HeatmapGrid } from "./heatmap-grid"
 import { HeatmapLegend } from "./heatmap-legend"
 
@@ -17,10 +18,30 @@ const allMetrics = [
   { value: "rank" as SortMetric, label: "RANK*", description: "5-Pillar Composite" },
 ]
 
-export function CEFDashboard() {
+interface CEFDashboardProps {
+  funds: CEFData[]
+  updatedAt: string | null
+  dataAsOf: string | null
+  syncStatus: SyncStatus | null
+}
+
+function formatAsOf(dateStr: string): string {
+  const date = new Date(dateStr)
+  if (Number.isNaN(date.getTime())) return ""
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+}
+
+export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDashboardProps) {
   const [activeMetric, setActiveMetric] = useState<SortMetric>("rank")
 
   const currentMetric = allMetrics.find((m) => m.value === activeMetric)
+
+  const asOfLabel = dataAsOf
+    ? formatAsOf(dataAsOf)
+    : updatedAt
+      ? formatAsOf(updatedAt)
+      : null
+  const isLive = Boolean(updatedAt)
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -36,11 +57,26 @@ export function CEFDashboard() {
                 TOP 50 CEF INDEX DAILY DATA & RANK
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-[#228844] animate-pulse" />
-              <span className="text-[11px] text-white/60 font-mono">
-                Live
-              </span>
+            <div className="flex flex-col items-end gap-0.5">
+              <div className="flex items-center gap-2">
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    isLive
+                      ? syncStatus === "partial"
+                        ? "bg-[#ffb100] animate-pulse"
+                        : "bg-[#228844] animate-pulse"
+                      : "bg-white/30"
+                  }`}
+                />
+                <span className="text-[11px] text-white/60 font-mono">
+                  {isLive ? "Synced" : "Sample"}
+                </span>
+              </div>
+              {asOfLabel && (
+                <span className="text-[9px] text-white/40 font-mono">
+                  As of {asOfLabel}
+                </span>
+              )}
             </div>
           </div>
 
@@ -94,7 +130,7 @@ export function CEFDashboard() {
 
         {/* Heatmap */}
         <HeatmapGrid
-          data={cefData}
+          data={funds}
           metric={activeMetric}
           count={20}
         />
@@ -111,17 +147,17 @@ export function CEFDashboard() {
         <div className="mt-4 grid grid-cols-3 gap-2">
           <StatCard
             label="Avg Discount"
-            value={`${(cefData.reduce((s, f) => s + f.discount, 0) / cefData.length).toFixed(1)}%`}
+            value={`${(funds.reduce((s, f) => s + f.discount, 0) / funds.length).toFixed(1)}%`}
             color="text-[#228844]"
           />
           <StatCard
             label="Avg Yield"
-            value={`${(cefData.reduce((s, f) => s + f.distribution_rate, 0) / cefData.length).toFixed(1)}%`}
+            value={`${(funds.reduce((s, f) => s + f.distribution_rate, 0) / funds.length).toFixed(1)}%`}
             color="text-[#ffb100]"
           />
           <StatCard
             label="Avg Z-Score"
-            value={(cefData.reduce((s, f) => s + f.zscore_1y, 0) / cefData.length).toFixed(2)}
+            value={(funds.reduce((s, f) => s + f.zscore_1y, 0) / funds.length).toFixed(2)}
             color="text-[#228844]"
           />
         </div>

@@ -13,7 +13,9 @@ export interface CEFData {
   volume: number
 }
 
-// Realistic sample data modeled on common CEFs
+// Tracked universe (20 funds). Replacements for delisted/renamed tickers:
+//   BIGZ → BTX (renamed to BlackRock Tech & Private Equity Term Trust, Feb 2025)
+//   PCI  → PDO (PCI merged into PDI Dec 2021; PDO is the active PIMCO dynamic income sibling)
 export const cefData: CEFData[] = [
   { symbol: "PDI", name: "PIMCO Dynamic Income", price: 18.52, nav: 20.14, discount: -8.04, zscore_1y: -2.31, zscore_3y: -1.85, zscore_5y: -1.42, distribution_rate: 14.2, leverage: 42.3, trend: 82, volume: 2340000 },
   { symbol: "PTY", name: "PIMCO Corporate & Income Opp", price: 13.18, nav: 14.76, discount: -10.7, zscore_1y: -1.98, zscore_3y: -1.62, zscore_5y: -1.21, distribution_rate: 11.8, leverage: 38.1, trend: 74, volume: 1120000 },
@@ -22,7 +24,7 @@ export const cefData: CEFData[] = [
   { symbol: "RQI", name: "Cohen & Steers Quality Realty", price: 11.83, nav: 13.21, discount: -10.45, zscore_1y: -1.67, zscore_3y: -1.33, zscore_5y: -0.91, distribution_rate: 8.4, leverage: 22.1, trend: 56, volume: 678000 },
   { symbol: "EOS", name: "Eaton Vance Enhanced Equity", price: 22.15, nav: 23.48, discount: -5.66, zscore_1y: 0.34, zscore_3y: 0.12, zscore_5y: null, distribution_rate: 8.1, leverage: 0, trend: 29, volume: 234000 },
   { symbol: "BST", name: "BlackRock Science & Tech", price: 35.62, nav: 38.95, discount: -8.55, zscore_1y: -0.87, zscore_3y: -0.45, zscore_5y: -0.22, distribution_rate: 9.3, leverage: 0, trend: 43, volume: 345000 },
-  { symbol: "BIGZ", name: "BlackRock Innovation & Growth", price: 7.15, nav: 8.92, discount: -19.84, zscore_1y: -2.88, zscore_3y: -2.45, zscore_5y: null, distribution_rate: 12.7, leverage: 0, trend: 95, volume: 1560000 },
+  { symbol: "BTX", name: "BlackRock Tech and Private Equity Term", price: 8.41, nav: 9.82, discount: -14.36, zscore_1y: -0.39, zscore_3y: 0.08, zscore_5y: 0.08, distribution_rate: 7.49, leverage: 1.09, trend: 60, volume: 7804930 },
   { symbol: "THQ", name: "Tekla Healthcare Opps", price: 17.88, nav: 19.56, discount: -8.59, zscore_1y: -0.56, zscore_3y: -0.23, zscore_5y: 0.11, distribution_rate: 9.8, leverage: 15.2, trend: 38, volume: 189000 },
   { symbol: "USA", name: "Liberty All-Star Equity", price: 6.42, nav: 7.38, discount: -13.01, zscore_1y: -1.12, zscore_3y: -0.78, zscore_5y: -0.56, distribution_rate: 10.2, leverage: 0, trend: 62, volume: 567000 },
   { symbol: "AWF", name: "AllianceBernstein Global HiInc", price: 10.15, nav: 11.34, discount: -10.49, zscore_1y: -1.78, zscore_3y: -1.45, zscore_5y: -1.12, distribution_rate: 8.6, leverage: 18.3, trend: 67, volume: 432000 },
@@ -34,7 +36,7 @@ export const cefData: CEFData[] = [
   { symbol: "NAD", name: "Nuveen Quality Muni Income", price: 11.92, nav: 13.45, discount: -11.38, zscore_1y: -1.89, zscore_3y: -1.56, zscore_5y: -1.23, distribution_rate: 5.4, leverage: 40.1, trend: 64, volume: 389000 },
   { symbol: "CII", name: "BlackRock Enhanced Capital", price: 19.34, nav: 20.12, discount: -3.88, zscore_1y: 0.67, zscore_3y: 0.45, zscore_5y: 0.23, distribution_rate: 6.2, leverage: 0, trend: 22, volume: 178000 },
   { symbol: "ETG", name: "Eaton Vance Tax-Adv Global Div", price: 16.78, nav: 18.34, discount: -8.51, zscore_1y: -0.78, zscore_3y: -0.45, zscore_5y: -0.12, distribution_rate: 8.5, leverage: 21.8, trend: 45, volume: 267000 },
-  { symbol: "PCI", name: "PIMCO Dynamic Credit & Mort", price: 16.92, nav: 19.45, discount: -13.01, zscore_1y: -2.01, zscore_3y: -1.67, zscore_5y: -1.34, distribution_rate: 12.1, leverage: 45.2, trend: 85, volume: 987000 },
+  { symbol: "PDO", name: "PIMCO Dynamic Income Opportunities", price: 13.33, nav: 12.85, discount: 3.74, zscore_1y: -0.03, zscore_3y: 0.24, zscore_5y: 0.24, distribution_rate: 11.51, leverage: 34.41, trend: 53, volume: 5930870 },
 ]
 
 export type SortMetric = "rank" | "zscore_1y" | "discount" | "distribution_rate" | "trend"
