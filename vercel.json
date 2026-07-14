@@ -1,0 +1,11 @@
+{
+  "framework": "nextjs",
+  "installCommand": "pnpm install",
+  "buildCommand": "pnpm build",
+  "crons": [
+    {
+      "path": "/api/cron/sync-cef",
+      "schedule": "30 17 * * 1-5"
+    }
+  ]
+}
