@@ -3,15 +3,9 @@ import type { CEFData } from "./cef-data"
 import type { CEFSnapshot } from "./cef-snapshot"
 import { fetchDailyPricing, scrapeFundBatch } from "./cef-scraper"
 import {
-  clearStagingSnapshot,
-  createInitialStagingSnapshot,
-  loadDailyPricingCache,
   loadSnapshot,
-  loadStagingSnapshot,
   loadSyncJob,
   promoteSnapshot,
-  saveDailyPricingCache,
-  saveStagingSnapshot,
   saveSyncJob,
   type SyncJobState,
 } from "./cef-store"
@@ -19,15 +13,12 @@ import { TOP_DISPLAY_COUNT, WATCHLIST_SYMBOLS } from "./watchlist"
 
 type PricingMap = Awaited<ReturnType<typeof fetchDailyPricing>>
 
-const BATCH_SIZE = 2
-const TOTAL_BATCHES = Math.ceil(WATCHLIST_SYMBOLS.length / BATCH_SIZE)
 /**
- * Small polite gap before firing the next chained batch. Kept short on purpose:
- * each batch runs in its own function invocation, so we must never sleep long
- * enough to hit the Hobby 60s runtime limit. Natural scrape time already spaces
- * requests out; this just adds a little extra courtesy.
+ * How many funds to scrape in parallel per wave. The full universe scrapes in
+ * ~7s all-at-once, but we cap concurrency to stay polite to CEF Connect and
+ * Barchart (avoid a burst of 48 simultaneous requests from one Vercel IP).
  */
-const BATCH_CHAIN_DELAY_MS = 3_000
+const SCRAPE_CONCURRENCY = 12
 
 function tradingDayEt(date = new Date()): string {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -50,35 +41,27 @@ function isWeekdayEt(date = new Date()): boolean {
   return !["Sat", "Sun"].includes(weekday)
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
+function chunk<T>(items: T[], size: number): T[][] {
+  const out: T[][] = []
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size))
+  return out
 }
 
 /**
- * Base URL used to chain the next batch. Prefer the origin the current request
- * actually arrived on (the public alias that just worked), then an explicit
- * override, then the raw deployment URL as a last resort. `VERCEL_URL` is the
- * deployment-specific host which is often behind Deployment Protection, so a
- * server-to-self fetch to it gets blocked — that silently breaks the chain.
+ * Merge freshly scraped funds over any prior snapshot. Symbols that failed this
+ * run fall back to their previous value and are reported as stale.
  */
-function getAppBaseUrl(requestOrigin?: string): string {
-  if (requestOrigin) return requestOrigin
-  if (process.env.SYNC_BASE_URL) return process.env.SYNC_BASE_URL
-  if (process.env.NEXT_PUBLIC_BASE_URL) return process.env.NEXT_PUBLIC_BASE_URL
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
-  return "http://localhost:3000"
-}
-
 function mergeFundLists(
   base: CEFData[],
   fresh: CEFData[],
 ): { funds: CEFData[]; staleSymbols: string[] } {
   const freshMap = new Map(fresh.map((f) => [f.symbol, f]))
+  const baseMap = new Map(base.map((f) => [f.symbol, f]))
   const staleSymbols: string[] = []
   const merged = WATCHLIST_SYMBOLS.map((symbol) => {
     const freshFund = freshMap.get(symbol)
     if (freshFund) return freshFund
-    const prior = base.find((f) => f.symbol === symbol)
+    const prior = baseMap.get(symbol)
     if (prior) {
       staleSymbols.push(symbol)
       return prior
@@ -123,223 +106,98 @@ function finalizeSnapshot(
   }
 }
 
-async function ensureDailyPricingCache(): Promise<PricingMap> {
-  const today = tradingDayEt()
-  const cached = await loadDailyPricingCache()
-  if (cached && cached.fetchedAt.slice(0, 10) === today && Object.keys(cached.rows).length > 0) {
-    const map = new Map<string, PricingMap extends Map<string, infer V> ? V : never>()
-    for (const [symbol, row] of Object.entries(cached.rows)) {
-      map.set(symbol.toUpperCase(), row as never)
-    }
-    return map as PricingMap
-  }
-
-  const pricing = await fetchDailyPricing()
+async function scrapeAllFunds(pricing: PricingMap): Promise<{
+  funds: CEFData[]
+  missingSymbols: string[]
+  errors: string[]
+  dataAsOf: string | null
+}> {
+  const funds: CEFData[] = []
+  const missingSymbols: string[] = []
+  const errors: string[] = []
   let dataAsOf: string | null = null
-  for (const row of pricing.values()) {
-    if (row.LastUpdated && (!dataAsOf || row.LastUpdated > dataAsOf)) {
-      dataAsOf = row.LastUpdated
+
+  for (const wave of chunk(WATCHLIST_SYMBOLS, SCRAPE_CONCURRENCY)) {
+    const result = await scrapeFundBatch(wave, pricing)
+    funds.push(...result.funds)
+    missingSymbols.push(...result.missingSymbols)
+    errors.push(...result.errors)
+    if (result.dataAsOf && (!dataAsOf || result.dataAsOf > dataAsOf)) {
+      dataAsOf = result.dataAsOf
     }
   }
-  await saveDailyPricingCache({
-    fetchedAt: new Date().toISOString(),
-    dataAsOf,
-    rows: Object.fromEntries(pricing.entries()),
-  })
-  return pricing
+
+  return { funds, missingSymbols, errors, dataAsOf }
 }
 
-/**
- * Fire the next batch as a fresh HTTP request. The next invocation responds
- * immediately (it does its work in `after()`), so this fetch resolves fast and
- * never keeps the current function alive waiting for the whole chain.
- */
-async function chainNextBatch(
-  batchIndex: number,
-  baseUrl?: string,
-  delayMs = BATCH_CHAIN_DELAY_MS,
-): Promise<void> {
-  const secret = process.env.CRON_SECRET
-  if (!secret) {
-    console.error("CRON_SECRET missing — cannot chain next batch")
-    return
-  }
-  if (batchIndex >= TOTAL_BATCHES) return
-  if (delayMs > 0) await sleep(delayMs)
-  const url = `${getAppBaseUrl(baseUrl)}/api/cron/sync-cef?batch=${batchIndex}`
-  try {
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${secret}` },
-      cache: "no-store",
-      redirect: "manual",
-    })
-    if (!res.ok && res.status !== 0) {
-      console.error(`Chain batch ${batchIndex} got HTTP ${res.status} from ${url}`)
-    }
-  } catch (err) {
-    console.error(`Failed to chain batch ${batchIndex}:`, err)
-  }
-}
-
-export interface BatchResult {
+export interface SyncResult {
   ok: boolean
-  action: "skipped" | "batch" | "completed" | "failed"
+  action: "skipped" | "completed" | "failed"
   message: string
-  batch: number
   job?: SyncJobState
   snapshot?: CEFSnapshot
 }
 
-export async function runSyncBatch(
-  batchIndex: number,
-  baseUrl?: string,
-  now = new Date(),
-): Promise<BatchResult> {
+/**
+ * Run the entire daily sync in a single invocation: scrape the full watchlist,
+ * rank it, promote the Top N. The universe scrapes in a few seconds, so there
+ * is no chaining, no staging, and nothing that can stall mid-run.
+ */
+export async function runFullSync(now = new Date()): Promise<SyncResult> {
   if (!isWeekdayEt(now)) {
-    return { ok: true, action: "skipped", message: "Weekend - no sync", batch: batchIndex }
-  }
-  if (batchIndex < 0 || batchIndex >= TOTAL_BATCHES) {
-    return { ok: false, action: "failed", message: `Invalid batch index ${batchIndex}`, batch: batchIndex }
+    return { ok: true, action: "skipped", message: "Weekend - no sync" }
   }
 
   const tradingDay = tradingDayEt(now)
-  let job = await loadSyncJob()
-
-  if (batchIndex === 0) {
-    const needsReset =
-      !job || job.tradingDay !== tradingDay || job.status === "complete" || job.status === "failed"
-    if (needsReset) {
-      const previous = await loadSnapshot()
-      const staging = createInitialStagingSnapshot(previous)
-      await saveStagingSnapshot(staging)
-      job = {
-        status: "running",
-        tradingDay,
-        completedBatches: [],
-        startedAt: now.toISOString(),
-        lastBatchAt: null,
-        completedAt: null,
-        errors: [],
-      }
-      await saveSyncJob(job)
-      await ensureDailyPricingCache()
-    }
+  let job: SyncJobState = {
+    status: "running",
+    tradingDay,
+    completedBatches: [],
+    startedAt: now.toISOString(),
+    lastBatchAt: now.toISOString(),
+    completedAt: null,
+    errors: [],
   }
-
-  job = (await loadSyncJob()) ?? job
-  if (!job || job.tradingDay !== tradingDay) {
-    return {
-      ok: false,
-      action: "failed",
-      message: "Sync job not initialized — run batch 0 first",
-      batch: batchIndex,
-    }
-  }
-
-  if (job.status === "complete") {
-    return { ok: true, action: "skipped", message: "Sync already complete for today", batch: batchIndex, job }
-  }
-
-  // Already done this batch: hop to the next one (no delay) so that re-calling
-  // batch 0 resumes a chain that stalled part-way through the day.
-  if (job.completedBatches.includes(batchIndex)) {
-    await chainNextBatch(batchIndex + 1, baseUrl, 0)
-    return {
-      ok: true,
-      action: "skipped",
-      message: `Batch ${batchIndex} already completed — resuming from next batch`,
-      batch: batchIndex,
-      job,
-    }
-  }
-
-  const start = batchIndex * BATCH_SIZE
-  const batchSymbols = WATCHLIST_SYMBOLS.slice(start, start + BATCH_SIZE)
-  if (batchSymbols.length === 0) {
-    return { ok: true, action: "skipped", message: "Empty batch", batch: batchIndex, job }
-  }
+  await saveSyncJob(job)
 
   try {
-    const pricing = await ensureDailyPricingCache()
-    let staging = await loadStagingSnapshot()
-    if (!staging) {
-      if (batchIndex > 0) {
-        return {
-          ok: false,
-          action: "failed",
-          message: "Staging snapshot missing — batch 0 must run first",
-          batch: batchIndex,
-          job,
-        }
-      }
-      staging = createInitialStagingSnapshot(await loadSnapshot())
-    }
+    const pricing = await fetchDailyPricing()
+    const previous = await loadSnapshot()
+    const scraped = await scrapeAllFunds(pricing)
 
-    const batch = await scrapeFundBatch(batchSymbols, pricing)
-    const merged = mergeFundLists(staging.watchlist, batch.funds)
-    const missing = Array.from(new Set([...staging.missingSymbols, ...batch.missingSymbols]))
-    const errors = [...staging.errors, ...batch.errors]
-    const dataAsOf = batch.dataAsOf ?? staging.dataAsOf
+    const priorFunds = previous?.watchlist ?? previous?.funds ?? []
+    const merged = mergeFundLists(priorFunds, scraped.funds)
 
-    const inProgress: CEFSnapshot = {
-      ...staging,
-      dataAsOf,
-      missingSymbols: missing,
+    const snapshot = finalizeSnapshot(merged.funds, {
+      updatedAt: now.toISOString(),
+      dataAsOf: scraped.dataAsOf ?? previous?.dataAsOf ?? null,
+      missingSymbols: scraped.missingSymbols,
       staleSymbols: merged.staleSymbols,
-      errors,
-      watchlist: merged.funds,
-      funds: staging.funds,
-      fundsProcessed: staging.funds.length,
-    }
-    await saveStagingSnapshot(inProgress)
+      errors: scraped.errors,
+    })
 
-    const completedBatches = Array.from(new Set([...job.completedBatches, batchIndex])).sort(
-      (a, b) => a - b,
-    )
+    if (snapshot.watchlist.length === 0) {
+      throw new Error("Scrape produced no funds and no prior snapshot to fall back on")
+    }
+
+    await promoteSnapshot(snapshot)
+
     job = {
       ...job,
-      status: "running",
-      completedBatches,
+      status: "complete",
+      completedBatches: [0],
       lastBatchAt: now.toISOString(),
-      errors,
+      completedAt: now.toISOString(),
+      errors: scraped.errors,
     }
-
-    const isLastBatch = batchIndex === TOTAL_BATCHES - 1
-    if (isLastBatch) {
-      const finalSnapshot = finalizeSnapshot(merged.funds, {
-        updatedAt: now.toISOString(),
-        dataAsOf,
-        missingSymbols: missing,
-        staleSymbols: merged.staleSymbols,
-        errors,
-      })
-      await promoteSnapshot(finalSnapshot)
-      await clearStagingSnapshot()
-      job = {
-        ...job,
-        status: "complete",
-        completedAt: now.toISOString(),
-      }
-      await saveSyncJob(job)
-      return {
-        ok: true,
-        action: "completed",
-        message: `Sync complete. Top ${TOP_DISPLAY_COUNT} ranked from ${WATCHLIST_SYMBOLS.length} funds.`,
-        batch: batchIndex,
-        job,
-        snapshot: finalSnapshot,
-      }
-    }
-
     await saveSyncJob(job)
-    await chainNextBatch(batchIndex + 1, baseUrl)
 
     return {
       ok: true,
-      action: "batch",
-      message: `Processed ${batchSymbols.join(", ")} (batch ${batchIndex + 1}/${TOTAL_BATCHES}). Triggered next batch.`,
-      batch: batchIndex,
+      action: "completed",
+      message: `Synced ${scraped.funds.length}/${WATCHLIST_SYMBOLS.length} funds; ranked Top ${TOP_DISPLAY_COUNT}.`,
       job,
+      snapshot,
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error"
@@ -347,11 +205,9 @@ export async function runSyncBatch(
       ...job,
       status: "failed",
       completedAt: now.toISOString(),
-      errors: [...job.errors, `batch ${batchIndex}: ${message}`],
+      errors: [...job.errors, message],
     }
     await saveSyncJob(job)
-    return { ok: false, action: "failed", message, batch: batchIndex, job }
+    return { ok: false, action: "failed", message, job }
   }
 }
-
-export { TOTAL_BATCHES, BATCH_CHAIN_DELAY_MS }

@@ -4,7 +4,7 @@
   "buildCommand": "pnpm build",
   "crons": [
     {
-      "path": "/api/cron/sync-cef?batch=0",
+      "path": "/api/cron/sync-cef",
       "schedule": "30 14 * * 1-5"
     }
   ]

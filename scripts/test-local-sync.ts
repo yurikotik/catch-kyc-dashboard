@@ -1,12 +1,15 @@
 import { scrapeFundBatch } from "../lib/cef-scraper"
-import { runSyncBatch } from "../lib/sync-cef-data"
+import { runFullSync } from "../lib/sync-cef-data"
+import { WATCHLIST_SYMBOLS } from "../lib/watchlist"
 
 const mode = process.argv[2] ?? "scrape"
 
 async function testScrape() {
-  console.log("=== Scrape test (AEF, PEO) ===")
+  const count = Number(process.argv[3] ?? 2)
+  const symbols = WATCHLIST_SYMBOLS.slice(0, count)
+  console.log(`=== Scrape test (${symbols.length} funds, parallel) ===`)
   const started = Date.now()
-  const result = await scrapeFundBatch(["AEF", "PEO"])
+  const result = await scrapeFundBatch(symbols)
   console.log("Duration:", `${((Date.now() - started) / 1000).toFixed(1)}s`)
   console.log("Funds:", result.funds.length)
   console.log("Missing:", result.missingSymbols)
@@ -25,21 +28,21 @@ async function testScrape() {
   if (result.funds.length === 0 || result.errors.length > 0) process.exitCode = 1
 }
 
-async function testBatch0() {
+async function testFullSync() {
   if (!process.env.BLOB_READ_WRITE_TOKEN) {
     console.error("BLOB_READ_WRITE_TOKEN missing")
     process.exit(1)
   }
-  console.log("=== Sync batch 0 ===")
+  console.log("=== Full sync ===")
   const started = Date.now()
-  const result = await runSyncBatch(0)
+  const result = await runFullSync()
   console.log("Duration:", `${((Date.now() - started) / 1000).toFixed(1)}s`)
-  console.log(JSON.stringify(result, null, 2))
+  console.log(JSON.stringify({ ...result, snapshot: undefined }, null, 2))
   if (!result.ok) process.exit(1)
 }
 
 async function main() {
-  if (mode === "batch") await testBatch0()
+  if (mode === "full") await testFullSync()
   else await testScrape()
 }
 

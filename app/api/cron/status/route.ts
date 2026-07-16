@@ -1,12 +1,10 @@
 import { loadSnapshot, loadSyncJob } from "@/lib/cef-store"
-import { TOTAL_BATCHES } from "@/lib/sync-cef-data"
 
 export const dynamic = "force-dynamic"
 
 export async function GET() {
   const [job, snapshot] = await Promise.all([loadSyncJob(), loadSnapshot()])
 
-  const completed = job?.completedBatches?.length ?? 0
   const stalledMs =
     job?.status === "running" && job.lastBatchAt
       ? Date.now() - new Date(job.lastBatchAt).getTime()
@@ -18,16 +16,13 @@ export async function GET() {
         ? {
             status: job.status,
             tradingDay: job.tradingDay,
-            progress: `${completed}/${TOTAL_BATCHES}`,
-            completedBatches: job.completedBatches,
             startedAt: job.startedAt,
-            lastBatchAt: job.lastBatchAt,
             completedAt: job.completedAt,
             errorCount: job.errors?.length ?? 0,
             errors: job.errors ?? [],
-            // A running job that hasn't advanced in >2 min likely died mid-chain.
+            // A run that hasn't finished in >2 min likely died (should take ~15s).
             likelyStalled: stalledMs !== null && stalledMs > 120_000,
-            secondsSinceLastBatch: stalledMs !== null ? Math.round(stalledMs / 1000) : null,
+            secondsSinceStart: stalledMs !== null ? Math.round(stalledMs / 1000) : null,
           }
         : null,
       snapshot: snapshot
