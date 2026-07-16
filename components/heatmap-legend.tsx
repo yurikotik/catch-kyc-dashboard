@@ -13,6 +13,13 @@ const legends: Record<SortMetric, LegendItem[]> = {
     { color: "bg-[#d48a10]", label: "20-35" },
     { color: "bg-[#b02020]", label: "< 20 (Bottom)" },
   ],
+  zscore: [
+    { color: "bg-[#228844]", label: "< -2.5 (Best)" },
+    { color: "bg-[#6ea832]", label: "-2 to -1.5" },
+    { color: "bg-[#ffb100]", label: "-1 to -0.5" },
+    { color: "bg-[#c06018]", label: "0.5 to 1" },
+    { color: "bg-[#b02020]", label: "> 1.5 (Worst)" },
+  ],
   zscore_1y: [
     { color: "bg-[#228844]", label: "< -2.5 (Best)" },
     { color: "bg-[#6ea832]", label: "-2 to -1.5" },
@@ -40,6 +47,13 @@ const legends: Record<SortMetric, LegendItem[]> = {
     { color: "bg-[#ffb100]", label: "35-50" },
     { color: "bg-[#d48a10]", label: "20-35" },
     { color: "bg-[#b02020]", label: "< 20 (Weak)" },
+  ],
+  technical: [
+    { color: "bg-[#228844]", label: "80+ (Buy)" },
+    { color: "bg-[#6ea832]", label: "50-65" },
+    { color: "bg-[#ffb100]", label: "35-50" },
+    { color: "bg-[#d48a10]", label: "20-35" },
+    { color: "bg-[#b02020]", label: "< 20 (Sell)" },
   ],
 }
 

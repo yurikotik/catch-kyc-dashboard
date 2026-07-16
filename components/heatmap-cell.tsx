@@ -8,20 +8,25 @@ import {
   getDistRateColor,
   getTrendColor,
   getRankColor,
+  getTechnicalColor,
+  getEffectiveZScore,
 } from "@/lib/cef-data"
 
 function getColorForMetric(fund: CEFData, metric: SortMetric, rankScore?: number): string {
   switch (metric) {
     case "rank":
       return getRankColor(rankScore ?? 0)
+    case "zscore":
     case "zscore_1y":
-      return getZScoreColor(fund.zscore_1y)
+      return getZScoreColor(getEffectiveZScore(fund))
     case "discount":
       return getDiscountColor(fund.discount)
     case "distribution_rate":
       return getDistRateColor(fund.distribution_rate)
     case "trend":
       return getTrendColor(fund.trend)
+    case "technical":
+      return getTechnicalColor(fund.technical_rating)
   }
 }
 
@@ -29,21 +34,26 @@ function getValueForMetric(fund: CEFData, metric: SortMetric, rankScore?: number
   switch (metric) {
     case "rank":
       return `${rankScore ?? 0}`
+    case "zscore":
     case "zscore_1y":
-      return fund.zscore_1y.toFixed(2)
+      return getEffectiveZScore(fund).toFixed(2)
     case "discount":
       return `${fund.discount.toFixed(1)}%`
     case "distribution_rate":
       return `${fund.distribution_rate.toFixed(1)}%`
     case "trend":
       return `${fund.trend}`
+    case "technical":
+      return `${fund.technical_rating}`
   }
 }
 
-function getMetricLabel(metric: SortMetric): string {
+function getMetricLabel(metric: SortMetric, fund?: CEFData): string {
   switch (metric) {
     case "rank":
       return "RANK*"
+    case "zscore":
+      return fund ? `Z-Score ${fund.zscore_window}` : "Z-Score"
     case "zscore_1y":
       return "Z-Score 1Y"
     case "discount":
@@ -52,6 +62,8 @@ function getMetricLabel(metric: SortMetric): string {
       return "Dist Rate"
     case "trend":
       return "Trend"
+    case "technical":
+      return "Technical"
   }
 }
 
@@ -79,7 +91,7 @@ export function HeatmapCell({ fund, metric, size, rank, rankScore }: HeatmapCell
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className={`${colorClass} ${sizeClasses[size]} w-full rounded-lg p-2 flex flex-col items-center justify-center gap-0.5 transition-all duration-200 active:scale-95 cursor-pointer border border-white/10`}
-        aria-label={`${fund.symbol}: ${getMetricLabel(metric)} ${value}`}
+        aria-label={`${fund.symbol}: ${getMetricLabel(metric, fund)} ${value}`}
         aria-expanded={isExpanded}
       >
         <span className="absolute top-1 left-1.5 text-[9px] font-mono text-white/50">
@@ -136,7 +148,8 @@ export function HeatmapCell({ fund, metric, size, rank, rankScore }: HeatmapCell
               <div className="grid grid-cols-5 gap-1.5 mb-3">
                 <PillarMini label="Yield" value={`${fund.distribution_rate.toFixed(1)}%`} color="text-[#ffb100]" />
                 <PillarMini label="Disc" value={`${fund.discount.toFixed(1)}%`} color={fund.discount < 0 ? "text-[#228844]" : "text-[#b02020]"} />
-                <PillarMini label="Z-Score" value={fund.zscore_1y.toFixed(2)} color={fund.zscore_1y < 0 ? "text-[#228844]" : "text-[#b02020]"} />
+                <PillarMini label="Z-Score" value={`${getEffectiveZScore(fund).toFixed(2)}`} color={getEffectiveZScore(fund) < 0 ? "text-[#228844]" : "text-[#b02020]"} />
+                <PillarMini label="Tech" value={`${fund.technical_rating}`} color={fund.technical_rating >= 65 ? "text-[#228844]" : fund.technical_rating >= 35 ? "text-[#ffb100]" : "text-[#b02020]"} />
                 <PillarMini label="Risk" value={`${fund.leverage.toFixed(0)}%`} color={fund.leverage < 25 ? "text-[#228844]" : fund.leverage < 35 ? "text-[#ffb100]" : "text-[#b02020]"} />
                 <PillarMini label="Trend" value={`${fund.trend}`} color={fund.trend >= 65 ? "text-[#228844]" : fund.trend >= 35 ? "text-[#ffb100]" : "text-[#b02020]"} />
               </div>
@@ -164,6 +177,11 @@ export function HeatmapCell({ fund, metric, size, rank, rankScore }: HeatmapCell
                     </span>
                   </div>
                 </div>
+              </div>
+
+              <div className="flex items-center justify-between text-xs text-muted-foreground mt-3">
+                <span>Technical ({fund.technical_signal ?? "n/a"})</span>
+                <span className="font-mono text-foreground">{fund.technical_rating}</span>
               </div>
 
               {/* Volume */}

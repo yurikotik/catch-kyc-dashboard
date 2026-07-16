@@ -2,20 +2,22 @@
 
 import { useState } from "react"
 import type { CEFData, SortMetric } from "@/lib/cef-data"
+import { getEffectiveZScore } from "@/lib/cef-data"
 import type { SyncStatus } from "@/lib/cef-snapshot"
 import { HeatmapGrid } from "./heatmap-grid"
 import { HeatmapLegend } from "./heatmap-legend"
 
 const pillarMetrics: { value: SortMetric; label: string; description: string }[] = [
-  { value: "zscore_1y", label: "Z-Score", description: "1-Year Z-Score" },
+  { value: "zscore", label: "Z-Score", description: "Longest Available Z-Score" },
   { value: "discount", label: "Discount", description: "NAV Discount" },
   { value: "distribution_rate", label: "Yield", description: "Distribution Rate" },
+  { value: "technical", label: "Technical", description: "Barchart Technical Rating" },
   { value: "trend", label: "Trend", description: "Momentum Score" },
 ]
 
 const allMetrics = [
   ...pillarMetrics,
-  { value: "rank" as SortMetric, label: "RANK*", description: "5-Pillar Composite" },
+  { value: "rank" as SortMetric, label: "RANK*", description: "40% Z + 20% Yield + 20% Technical + 20% Discount" },
 ]
 
 interface CEFDashboardProps {
@@ -177,7 +179,7 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
           />
           <StatCard
             label="Avg Z-Score"
-            value={(funds.reduce((s, f) => s + f.zscore_1y, 0) / funds.length).toFixed(2)}
+            value={(funds.reduce((s, f) => s + getEffectiveZScore(f), 0) / funds.length).toFixed(2)}
             color="text-[#228844]"
           />
         </div>
@@ -205,7 +207,7 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
           Data sourced from CEF Connect & Barchart
         </p>
         <p className="text-[9px] text-muted-foreground text-center font-mono mt-1">
-          RANK* = 5-Pillar Composite: Yield 25% + Discount 25% + X-Ray 20% + Risk 15% + Momentum 15%
+          RANK* = 40% Z-Score + 20% Yield + 20% Technical + 20% Discount (Top 20 from Top 50 watchlist)
         </p>
       </footer>
     </div>

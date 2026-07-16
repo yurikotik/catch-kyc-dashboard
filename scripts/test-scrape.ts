@@ -1,16 +1,16 @@
-import { scrapeTrackedFunds } from "../lib/cef-scraper"
+import { scrapeFundBatch } from "../lib/cef-scraper"
+import { WATCHLIST_SYMBOLS } from "../lib/watchlist"
 
 async function main() {
   const start = Date.now()
-  const result = await scrapeTrackedFunds()
+  const batch = await scrapeFundBatch(WATCHLIST_SYMBOLS.slice(0, 4))
   console.log(`Elapsed: ${((Date.now() - start) / 1000).toFixed(1)}s`)
-  console.log(`Funds scraped: ${result.funds.length}`)
-  console.log(`Data as of: ${result.dataAsOf}`)
-  console.log(`Missing symbols: ${JSON.stringify(result.missingSymbols)}`)
-  console.log(`Errors: ${JSON.stringify(result.errors, null, 2)}`)
-  for (const f of result.funds) {
+  console.log(`Funds scraped: ${batch.funds.length}`)
+  console.log(`Missing: ${batch.missingSymbols.join(", ")}`)
+  console.log(`Errors: ${batch.errors.join("; ")}`)
+  for (const f of batch.funds) {
     console.log(
-      `${f.symbol.padEnd(5)} price=${f.price} nav=${f.nav} disc=${f.discount} z1=${f.zscore_1y} z3=${f.zscore_3y} z5=${f.zscore_5y} yield=${f.distribution_rate.toFixed(2)} lev=${f.leverage} trend=${f.trend} vol=${f.volume}`,
+      `${f.symbol} z=${f.zscore_effective}(${f.zscore_window}) tech=${f.technical_rating} yield=${f.distribution_rate.toFixed(2)} disc=${f.discount}`,
     )
   }
 }

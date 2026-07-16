@@ -1,8 +1,7 @@
-import { syncCEFData } from "@/lib/sync-cef-data"
+import { runSyncBatch } from "@/lib/sync-cef-data"
 
-// A full sync (~20 funds x 2.5-4s polite delay + request time) takes ~90s;
-// 300s leaves headroom for retries and fits both Hobby and Pro fluid limits.
-export const maxDuration = 300
+// Hobby-friendly: each batch processes 2 funds (~15-30s). Chaining handles the rest.
+export const maxDuration = 60
 export const dynamic = "force-dynamic"
 
 export async function GET(request: Request) {
@@ -11,22 +10,26 @@ export async function GET(request: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const url = new URL(request.url)
+  const batchParam = url.searchParams.get("batch")
+  const batchIndex = batchParam === null ? 0 : Number(batchParam)
+  if (!Number.isInteger(batchIndex) || batchIndex < 0) {
+    return Response.json({ error: "Invalid batch parameter" }, { status: 400 })
+  }
+
   try {
-    const snapshot = await syncCEFData()
-    return Response.json({
-      ok: true,
-      syncStatus: snapshot.syncStatus,
-      fundsProcessed: snapshot.fundsProcessed,
-      missingSymbols: snapshot.missingSymbols,
-      staleSymbols: snapshot.staleSymbols,
-      errors: snapshot.errors,
-      updatedAt: snapshot.updatedAt,
-      dataAsOf: snapshot.dataAsOf,
-    })
+    const result = await runSyncBatch(batchIndex)
+    const status = result.ok ? 200 : 500
+    return Response.json(result, { status })
   } catch (err) {
-    console.error("CEF sync failed:", err)
+    console.error("CEF sync batch failed:", err)
     return Response.json(
-      { ok: false, error: err instanceof Error ? err.message : "Unknown error" },
+      {
+        ok: false,
+        action: "failed",
+        batch: batchIndex,
+        error: err instanceof Error ? err.message : "Unknown error",
+      },
       { status: 500 },
     )
   }
