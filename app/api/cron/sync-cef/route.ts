@@ -1,6 +1,9 @@
+import { after } from "next/server"
 import { runSyncBatch } from "@/lib/sync-cef-data"
 
-// Hobby-friendly: each batch processes 2 funds (~15-30s). Chaining handles the rest.
+// Hobby-safe: the response returns immediately and the actual batch work runs
+// in `after()`. Each invocation only ever does ONE small batch (2 funds) plus a
+// fast trigger of the next batch, so no single function approaches the 60s cap.
 export const maxDuration = 60
 export const dynamic = "force-dynamic"
 
@@ -17,20 +20,15 @@ export async function GET(request: Request) {
     return Response.json({ error: "Invalid batch parameter" }, { status: 400 })
   }
 
-  try {
-    const result = await runSyncBatch(batchIndex)
-    const status = result.ok ? 200 : 500
-    return Response.json(result, { status })
-  } catch (err) {
-    console.error("CEF sync batch failed:", err)
-    return Response.json(
-      {
-        ok: false,
-        action: "failed",
-        batch: batchIndex,
-        error: err instanceof Error ? err.message : "Unknown error",
-      },
-      { status: 500 },
-    )
-  }
+  // Do the scrape + chaining after responding. This keeps the function short
+  // and lets the chain advance one invocation at a time without blocking.
+  after(async () => {
+    try {
+      await runSyncBatch(batchIndex)
+    } catch (err) {
+      console.error(`CEF sync batch ${batchIndex} failed:`, err)
+    }
+  })
+
+  return Response.json({ ok: true, action: "scheduled", batch: batchIndex })
 }

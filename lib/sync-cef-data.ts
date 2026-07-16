@@ -1,4 +1,3 @@
-import { after } from "next/server"
 import { computeRank, getTopFunds } from "./cef-data"
 import type { CEFData } from "./cef-data"
 import type { CEFSnapshot } from "./cef-snapshot"
@@ -22,8 +21,13 @@ type PricingMap = Awaited<ReturnType<typeof fetchDailyPricing>>
 
 const BATCH_SIZE = 2
 const TOTAL_BATCHES = Math.ceil(WATCHLIST_SYMBOLS.length / BATCH_SIZE)
-/** Delay between chained batch invocations (1.5 min) for polite scraping */
-const BATCH_CHAIN_DELAY_MS = 90_000
+/**
+ * Small polite gap before firing the next chained batch. Kept short on purpose:
+ * each batch runs in its own function invocation, so we must never sleep long
+ * enough to hit the Hobby 60s runtime limit. Natural scrape time already spaces
+ * requests out; this just adds a little extra courtesy.
+ */
+const BATCH_CHAIN_DELAY_MS = 3_000
 
 function tradingDayEt(date = new Date()): string {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -136,25 +140,28 @@ async function ensureDailyPricingCache(): Promise<PricingMap> {
   return pricing
 }
 
-async function triggerNextBatch(batchIndex: number): Promise<void> {
+/**
+ * Fire the next batch as a fresh HTTP request. The next invocation responds
+ * immediately (it does its work in `after()`), so this fetch resolves fast and
+ * never keeps the current function alive waiting for the whole chain.
+ */
+async function chainNextBatch(batchIndex: number, delayMs = BATCH_CHAIN_DELAY_MS): Promise<void> {
   const secret = process.env.CRON_SECRET
-  if (!secret) return
+  if (!secret) {
+    console.error("CRON_SECRET missing — cannot chain next batch")
+    return
+  }
+  if (batchIndex >= TOTAL_BATCHES) return
+  if (delayMs > 0) await sleep(delayMs)
   const url = `${getAppBaseUrl()}/api/cron/sync-cef?batch=${batchIndex}`
-  await fetch(url, {
-    headers: { Authorization: `Bearer ${secret}` },
-    cache: "no-store",
-  })
-}
-
-function scheduleNextBatch(batchIndex: number): void {
-  after(async () => {
-    await sleep(BATCH_CHAIN_DELAY_MS)
-    try {
-      await triggerNextBatch(batchIndex)
-    } catch (err) {
-      console.error(`Failed to chain batch ${batchIndex}:`, err)
-    }
-  })
+  try {
+    await fetch(url, {
+      headers: { Authorization: `Bearer ${secret}` },
+      cache: "no-store",
+    })
+  } catch (err) {
+    console.error(`Failed to chain batch ${batchIndex}:`, err)
+  }
 }
 
 export interface BatchResult {
@@ -208,18 +215,21 @@ export async function runSyncBatch(batchIndex: number, now = new Date()): Promis
     }
   }
 
+  if (job.status === "complete") {
+    return { ok: true, action: "skipped", message: "Sync already complete for today", batch: batchIndex, job }
+  }
+
+  // Already done this batch: hop to the next one (no delay) so that re-calling
+  // batch 0 resumes a chain that stalled part-way through the day.
   if (job.completedBatches.includes(batchIndex)) {
+    await chainNextBatch(batchIndex + 1, 0)
     return {
       ok: true,
       action: "skipped",
-      message: `Batch ${batchIndex} already completed`,
+      message: `Batch ${batchIndex} already completed — resuming from next batch`,
       batch: batchIndex,
       job,
     }
-  }
-
-  if (job.status === "complete") {
-    return { ok: true, action: "skipped", message: "Sync already complete for today", batch: batchIndex, job }
   }
 
   const start = batchIndex * BATCH_SIZE
@@ -301,12 +311,12 @@ export async function runSyncBatch(batchIndex: number, now = new Date()): Promis
     }
 
     await saveSyncJob(job)
-    scheduleNextBatch(batchIndex + 1)
+    await chainNextBatch(batchIndex + 1)
 
     return {
       ok: true,
       action: "batch",
-      message: `Processed ${batchSymbols.join(", ")} (batch ${batchIndex + 1}/${TOTAL_BATCHES}). Next batch in ${BATCH_CHAIN_DELAY_MS / 1000}s.`,
+      message: `Processed ${batchSymbols.join(", ")} (batch ${batchIndex + 1}/${TOTAL_BATCHES}). Triggered next batch.`,
       batch: batchIndex,
       job,
     }
