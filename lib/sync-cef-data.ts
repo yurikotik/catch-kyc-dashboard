@@ -54,9 +54,18 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-function getAppBaseUrl(): string {
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
+/**
+ * Base URL used to chain the next batch. Prefer the origin the current request
+ * actually arrived on (the public alias that just worked), then an explicit
+ * override, then the raw deployment URL as a last resort. `VERCEL_URL` is the
+ * deployment-specific host which is often behind Deployment Protection, so a
+ * server-to-self fetch to it gets blocked — that silently breaks the chain.
+ */
+function getAppBaseUrl(requestOrigin?: string): string {
+  if (requestOrigin) return requestOrigin
+  if (process.env.SYNC_BASE_URL) return process.env.SYNC_BASE_URL
   if (process.env.NEXT_PUBLIC_BASE_URL) return process.env.NEXT_PUBLIC_BASE_URL
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
   return "http://localhost:3000"
 }
 
@@ -145,7 +154,11 @@ async function ensureDailyPricingCache(): Promise<PricingMap> {
  * immediately (it does its work in `after()`), so this fetch resolves fast and
  * never keeps the current function alive waiting for the whole chain.
  */
-async function chainNextBatch(batchIndex: number, delayMs = BATCH_CHAIN_DELAY_MS): Promise<void> {
+async function chainNextBatch(
+  batchIndex: number,
+  baseUrl?: string,
+  delayMs = BATCH_CHAIN_DELAY_MS,
+): Promise<void> {
   const secret = process.env.CRON_SECRET
   if (!secret) {
     console.error("CRON_SECRET missing — cannot chain next batch")
@@ -153,12 +166,16 @@ async function chainNextBatch(batchIndex: number, delayMs = BATCH_CHAIN_DELAY_MS
   }
   if (batchIndex >= TOTAL_BATCHES) return
   if (delayMs > 0) await sleep(delayMs)
-  const url = `${getAppBaseUrl()}/api/cron/sync-cef?batch=${batchIndex}`
+  const url = `${getAppBaseUrl(baseUrl)}/api/cron/sync-cef?batch=${batchIndex}`
   try {
-    await fetch(url, {
+    const res = await fetch(url, {
       headers: { Authorization: `Bearer ${secret}` },
       cache: "no-store",
+      redirect: "manual",
     })
+    if (!res.ok && res.status !== 0) {
+      console.error(`Chain batch ${batchIndex} got HTTP ${res.status} from ${url}`)
+    }
   } catch (err) {
     console.error(`Failed to chain batch ${batchIndex}:`, err)
   }
@@ -173,7 +190,11 @@ export interface BatchResult {
   snapshot?: CEFSnapshot
 }
 
-export async function runSyncBatch(batchIndex: number, now = new Date()): Promise<BatchResult> {
+export async function runSyncBatch(
+  batchIndex: number,
+  baseUrl?: string,
+  now = new Date(),
+): Promise<BatchResult> {
   if (!isWeekdayEt(now)) {
     return { ok: true, action: "skipped", message: "Weekend - no sync", batch: batchIndex }
   }
@@ -222,7 +243,7 @@ export async function runSyncBatch(batchIndex: number, now = new Date()): Promis
   // Already done this batch: hop to the next one (no delay) so that re-calling
   // batch 0 resumes a chain that stalled part-way through the day.
   if (job.completedBatches.includes(batchIndex)) {
-    await chainNextBatch(batchIndex + 1, 0)
+    await chainNextBatch(batchIndex + 1, baseUrl, 0)
     return {
       ok: true,
       action: "skipped",
@@ -311,7 +332,7 @@ export async function runSyncBatch(batchIndex: number, now = new Date()): Promis
     }
 
     await saveSyncJob(job)
-    await chainNextBatch(batchIndex + 1)
+    await chainNextBatch(batchIndex + 1, baseUrl)
 
     return {
       ok: true,

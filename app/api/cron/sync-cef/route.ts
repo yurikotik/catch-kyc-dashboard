@@ -20,11 +20,16 @@ export async function GET(request: Request) {
     return Response.json({ error: "Invalid batch parameter" }, { status: 400 })
   }
 
+  // Reuse the exact host this request arrived on to chain the next batch. This
+  // avoids VERCEL_URL, which points at the protected deployment host and would
+  // silently break server-to-self chaining.
+  const origin = url.origin
+
   // Do the scrape + chaining after responding. This keeps the function short
   // and lets the chain advance one invocation at a time without blocking.
   after(async () => {
     try {
-      await runSyncBatch(batchIndex)
+      await runSyncBatch(batchIndex, origin)
     } catch (err) {
       console.error(`CEF sync batch ${batchIndex} failed:`, err)
     }
