@@ -30,8 +30,8 @@ function getColorForMetric(fund: CEFData, metric: SortMetric, rankScore?: number
   }
 }
 
-/** Bright yellow mid-scores need dark ink for contrast */
-function chipNeedsDarkInk(fund: CEFData, metric: SortMetric, rankScore?: number): boolean {
+/** Yellow / lime / gold bands need dark ink; green / orange / red use white */
+function needsDarkInk(fund: CEFData, metric: SortMetric, rankScore?: number): boolean {
   const score =
     metric === "rank"
       ? (rankScore ?? 0)
@@ -46,16 +46,16 @@ function chipNeedsDarkInk(fund: CEFData, metric: SortMetric, rankScore?: number)
               : fund.technical_rating
 
   if (metric === "rank" || metric === "trend" || metric === "technical") {
-    return score >= 20 && score < 50
+    return score >= 20 && score < 65
   }
   if (metric === "zscore" || metric === "zscore_1y") {
-    return score > -1.5 && score <= 0.5
+    return score > -2.0 && score <= 0.5
   }
   if (metric === "discount") {
-    return score > -10 && score <= -4
+    return score > -10 && score <= 0
   }
   if (metric === "distribution_rate") {
-    return score >= 6 && score < 10
+    return score >= 6 && score < 12
   }
   return false
 }
@@ -108,10 +108,13 @@ export function HeatmapCell({ fund, metric, rank, rankScore }: HeatmapCellProps)
   const [isExpanded, setIsExpanded] = useState(false)
   const dialogRef = useRef<HTMLDivElement>(null)
   const titleId = useId()
-  const accent = getColorForMetric(fund, metric, rankScore)
+  const heatBg = getColorForMetric(fund, metric, rankScore)
   const value = getValueForMetric(fund, metric, rankScore)
-  const darkInk = chipNeedsDarkInk(fund, metric, rankScore)
-  const chipText = darkInk ? "text-[var(--gy-ink)]" : "text-white"
+  const darkInk = needsDarkInk(fund, metric, rankScore)
+  const fg = darkInk ? "text-[var(--gy-ink)]" : "text-white"
+  const fgMuted = darkInk ? "text-[var(--gy-ink)]/75" : "text-white/85"
+  const fgSoft = darkInk ? "bg-[var(--gy-ink)]/10" : "bg-white/15"
+  const borderTone = darkInk ? "border-black/10" : "border-white/20"
 
   useEffect(() => {
     if (!isExpanded) return
@@ -125,36 +128,31 @@ export function HeatmapCell({ fund, metric, rank, rankScore }: HeatmapCellProps)
 
   return (
     <div className="relative">
-      {/* Medicare-style task card: white/surface + colored score chip */}
       <button
         type="button"
         onClick={() => setIsExpanded(true)}
-        className="gy-task-card gy-tap flex w-full flex-col items-stretch overflow-hidden !gap-0 !p-0 text-left transition-colors hover:bg-[var(--page-surface-2)]"
+        className={`gy-tap flex min-h-[5.5rem] w-full items-center gap-3 rounded-xl border px-4 py-3.5 text-left shadow-[var(--page-shadow)] transition-opacity hover:opacity-95 ${heatBg} ${fg} ${borderTone}`}
         aria-label={`Rank ${rank}. ${fund.symbol}: ${getMetricLabel(metric, fund)} ${value}. Open details.`}
         aria-expanded={isExpanded}
         aria-haspopup="dialog"
       >
-        <div className="flex w-full items-center gap-3 px-4 py-3.5">
-          <div
-            className={`${accent} ${chipText} flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-lg`}
-          >
-            <span className="text-[length:var(--gy-text-xs)] font-semibold leading-none opacity-90">
-              #{rank}
-            </span>
-            <span className="text-[length:var(--gy-text-sm)] font-bold leading-tight">{value}</span>
-          </div>
-          <div className="min-w-0 flex-1">
-            <span className="block text-[length:var(--gy-text-lg)] font-bold text-[var(--page-text)]">
-              {fund.symbol}
-            </span>
-            <span className="block truncate text-[length:var(--gy-text-sm)] text-[var(--page-muted)]">
-              {getMetricLabel(metric, fund)}
-            </span>
-          </div>
-          <span className="shrink-0 text-[length:var(--gy-text-lg)] text-[var(--gy-blue)]" aria-hidden>
-            →
-          </span>
+        <div className="min-w-0 flex-1">
+          <p className={`text-[length:var(--gy-text-sm)] font-semibold ${fgMuted}`}>#{rank}</p>
+          <p className="truncate text-[length:var(--gy-text-lg)] font-bold leading-tight">
+            {fund.symbol}
+          </p>
+          <p className={`mt-0.5 truncate text-[length:var(--gy-text-sm)] ${fgMuted}`}>
+            {getMetricLabel(metric, fund)}
+          </p>
         </div>
+        <div className={`shrink-0 rounded-lg px-3 py-2 text-center ${fgSoft}`}>
+          <p className="text-[length:var(--gy-text-xl)] font-bold leading-none tabular-nums">
+            {value}
+          </p>
+        </div>
+        <span className={`shrink-0 text-[length:var(--gy-text-lg)] font-bold ${fgMuted}`} aria-hidden>
+          →
+        </span>
       </button>
 
       {isExpanded && (
@@ -171,21 +169,46 @@ export function HeatmapCell({ fund, metric, rank, rankScore }: HeatmapCellProps)
             aria-modal="true"
             aria-labelledby={titleId}
             tabIndex={-1}
-            className="gy-task-card fixed z-40 left-4 right-4 top-1/2 max-h-[85vh] w-auto max-w-md -translate-y-1/2 overflow-y-auto outline-none mx-auto"
+            className="fixed left-4 right-4 top-1/2 z-40 mx-auto flex max-h-[85vh] w-auto max-w-md -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-[var(--page-border)] bg-[var(--page-surface)] shadow-[var(--page-shadow)] outline-none"
           >
-            <div className={`${accent} ${chipText} px-4 py-4`}>
-              <p className="text-[length:var(--gy-text-sm)] font-semibold opacity-90">Rank #{rank}</p>
-              <h4 id={titleId} className="text-[length:var(--gy-text-2xl)] font-bold leading-tight">
-                {fund.symbol}
-              </h4>
-              <p className="mt-1 text-[length:var(--gy-text-base)] leading-snug opacity-95">{fund.name}</p>
-              <p className="mt-3 text-[length:var(--gy-text-sm)] font-semibold opacity-90">
-                RANK* score: <span className="text-[length:var(--gy-text-xl)]">{rankScore ?? "—"}</span>
-              </p>
+            {/* Heat header — full-bleed, no task-card padding clash */}
+            <div className={`${heatBg} ${fg} px-5 py-5`}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <p className={`text-[length:var(--gy-text-sm)] font-semibold ${fgMuted}`}>
+                    Rank #{rank}
+                  </p>
+                  <h4
+                    id={titleId}
+                    className="mt-1 text-[length:var(--gy-text-2xl)] font-bold leading-tight"
+                  >
+                    {fund.symbol}
+                  </h4>
+                  <p className={`mt-2 text-[length:var(--gy-text-base)] leading-snug ${fgMuted}`}>
+                    {fund.name}
+                  </p>
+                </div>
+                <div className={`shrink-0 rounded-lg px-3 py-2.5 text-right ${fgSoft}`}>
+                  <p className={`text-[length:var(--gy-text-sm)] font-medium ${fgMuted}`}>
+                    {getMetricLabel(metric, fund)}
+                  </p>
+                  <p className="text-[length:var(--gy-text-xl)] font-bold tabular-nums leading-tight">
+                    {value}
+                  </p>
+                </div>
+              </div>
+              {metric !== "rank" && rankScore != null && (
+                <p className={`mt-4 text-[length:var(--gy-text-sm)] font-semibold ${fgMuted}`}>
+                  RANK* score:{" "}
+                  <span className={`text-[length:var(--gy-text-lg)] font-bold ${fg}`}>
+                    {rankScore}
+                  </span>
+                </p>
+              )}
             </div>
 
-            <div className="p-4">
-              <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className="overflow-y-auto p-5">
+              <div className="mb-4 grid grid-cols-3 gap-2">
                 <MetricBox label="Price" value={`$${fund.price.toFixed(2)}`} />
                 <MetricBox label="NAV" value={`$${fund.nav.toFixed(2)}`} />
                 <MetricBox
@@ -252,7 +275,7 @@ export function HeatmapCell({ fund, metric, rank, rankScore }: HeatmapCellProps)
             <button
               type="button"
               onClick={() => setIsExpanded(false)}
-              className="gy-tap min-h-12 w-full border-t border-[var(--page-border)] bg-[var(--page-surface)] text-[length:var(--gy-text-base)] font-semibold text-[var(--page-text)] hover:bg-[var(--page-surface-2)]"
+              className="gy-tap min-h-12 w-full shrink-0 border-t border-[var(--page-border)] bg-[var(--page-surface)] text-[length:var(--gy-text-base)] font-semibold text-[var(--page-text)] hover:bg-[var(--page-surface-2)]"
             >
               Close
             </button>
@@ -278,7 +301,7 @@ function MetricBox({
       : tone === "danger"
         ? "text-[var(--gy-danger)]"
         : tone === "gold"
-          ? "text-[var(--page-accent)]"
+          ? "text-[var(--gy-gold)]"
           : "text-[var(--page-text)]"
 
   return (
@@ -305,7 +328,7 @@ function ZYear({ label, value }: { label: string; value: number | null }) {
 
   return (
     <div>
-      <span className="block text-[length:var(--gy-text-xs)] text-[var(--page-muted)]">{label}</span>
+      <span className="block text-[length:var(--gy-text-sm)] text-[var(--page-muted)]">{label}</span>
       <span className={`block text-[length:var(--gy-text-base)] font-bold ${tone}`}>
         {value !== null ? value.toFixed(2) : "n/a"}
       </span>
