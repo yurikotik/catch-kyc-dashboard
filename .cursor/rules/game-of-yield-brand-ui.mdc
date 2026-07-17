@@ -1,0 +1,143 @@
+---
+description: Game of Yield / Pensionizer brand UI — tokens, senior UX, logo flavor (use on every GY site)
+globs: "**/*.{tsx,jsx,css,scss,sass,html,vue,mdx}"
+alwaysApply: false
+---
+
+# Game of Yield — Brand UI (all sites)
+
+Copy this file into any Game of Yield / Pensionizer / Catch KYC / Club site as:
+`.cursor/rules/game-of-yield-brand-ui.mdc`
+
+**Same brand identity. Different layout per product.** Never clone one site onto another.
+
+## 1. Required CSS tokens
+
+Put these on every site (`:root`). Do not invent new accent palettes.
+
+```css
+:root {
+  /* Logo flavor — Pensionizer Income Engine */
+  --gy-green: #459212;
+  --gy-yellow: #FCDA0F;
+  --gy-red: #CA3A41;
+  --gy-blue: #117DAE;
+  --gy-green-soft: #E8F3DC;
+  --gy-yellow-soft: #FFF6C2;
+  --gy-red-soft: #F8E4E5;
+  --gy-blue-soft: #E3F1F8;
+
+  /* Calm base */
+  --gy-ink: #1B242C;
+  --gy-muted: #4A5560;
+  --gy-bg: #F6F3EE;
+  --gy-surface: #FFFFFF;
+  --gy-border: #D9D2C8;
+
+  /* Semantics */
+  --gy-success: var(--gy-green);
+  --gy-danger: var(--gy-red);
+  --gy-gold: #D4B40A; /* readable yellow for text */
+  --gy-navy: var(--gy-blue);
+
+  /* Type — senior-friendly */
+  /* Figtree = Senior Planet free web font (Gotham needs Adobe Fonts license) */
+  --gy-font: "Figtree", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --gy-text-xs: 0.9375rem;  /* 15px captions only */
+  --gy-text-sm: 1rem;       /* 16px */
+  --gy-text-base: 1.125rem; /* 18px body */
+  --gy-text-lg: 1.25rem;    /* 20px */
+  --gy-text-xl: 1.5rem;     /* 24px */
+  --gy-text-2xl: 2rem;      /* 32px H1 */
+  --gy-leading: 1.55;
+  --gy-tracking: 0.01em;
+}
+
+/* Optional dark theme — dark GREY only, never blue wash */
+.dark {
+  --gy-bg: #1A1C1E;
+  --gy-surface: #2A2C2E;
+  --gy-ink: #F3EFE8;
+  --gy-muted: #A8AEB4;
+  --gy-border: #3F4347;
+  --gy-green-soft: #24351A;
+  --gy-yellow-soft: #3A3410;
+  --gy-red-soft: #3A1E20;
+  --gy-blue-soft: #173040;
+}
+```
+
+Heat / status scale = logo pie: **green → yellow → red**. Bright yellow needs **dark ink** on chips (not white text).
+
+## 2. Flavor rule (critical)
+
+Logo colors are **seasoning, not the stew**.
+
+| DO use for | DO NOT use for |
+|------------|----------------|
+| Thin stripe `green \| yellow \| red` | Full-page backgrounds |
+| Active / selected states | Large body text |
+| Score chips, badges, key metrics | Every border & button |
+| One primary CTA per screen | Neon gradients / purple fintech |
+| Small brand wordmarks | Competing chrome everywhere |
+
+## 3. Typography & a11y (required)
+
+- Body ≥ **18px**; weights **400–700** only (no Thin/Light)
+- No script, display serif, condensed, or ultra-stylish fonts
+- Links underlined or clearly marked (not color alone)
+- Tap targets ≥ **44px**; visible focus rings
+- Skip-to-content link; zoom-safe to 200%
+- When feasible: on-page **A / A+ / A++** text-size control
+- Prefer light + dark theme toggle; dark = grey base
+
+## 4. UX patterns (Medicare.gov + Senior Planet)
+
+- Action-first: “What do you want to do / check?”
+- Large task cards with plain verbs (Find, Get, Check, See)
+- Calm hierarchy; help path obvious; no clutter
+- Soft borders, generous whitespace, minimal chrome
+
+## 5. Same brand, different layout
+
+Vary **structure**, not **tokens**:
+
+| Product | Layout personality |
+|---------|-------------------|
+| Marketing / club | Ivory pages, storytelling, few CTAs |
+| Play Deck | Rank-forward card stack, minimal chrome |
+| Analytics / X-Ray | Denser data; dark grey optional |
+| Membership / shop | Single column, one primary CTA |
+
+## 6. Examples
+
+```tsx
+// ✅ GOOD — calm plate + logo flavor
+<header>
+  <div className="gy-brand-stripe" aria-hidden><span /><span /><span /></div>
+  <p><span className="text-[var(--gy-green)] font-bold">Game of Yield</span>
+     <span className="text-[var(--gy-red)] font-bold"> · Income Engine</span></p>
+  <h1 className="text-[length:var(--gy-text-2xl)] font-bold text-[var(--gy-ink)]">…</h1>
+  <button className="min-h-11 bg-[var(--gy-blue)] text-white px-5">Check RANK*</button>
+</header>
+
+// ❌ BAD — logo wash, tiny type, fancy font
+<div className="bg-[#459212] text-xs font-thin italic text-[#FCDA0F]">Upgrade</div>
+```
+
+```css
+/* Brand stripe utility — use once near header */
+.gy-brand-stripe { display: grid; grid-template-columns: 1fr 1fr 1fr; height: 4px; }
+.gy-brand-stripe > :nth-child(1) { background: var(--gy-green); }
+.gy-brand-stripe > :nth-child(2) { background: var(--gy-yellow); }
+.gy-brand-stripe > :nth-child(3) { background: var(--gy-red); }
+```
+
+## 7. Ship checklist
+
+- [ ] Tokens present; no rogue accent palette
+- [ ] Flavor sparse but noticeable (stripe / accents / heat)
+- [ ] Body ≥18px; WCAG AA; yellow not used for small body text
+- [ ] Layout distinct from sibling GY apps
+- [ ] One clear primary action above the fold
+- [ ] Senior-friendly: spacing, focus, plain labels, zoom-safe

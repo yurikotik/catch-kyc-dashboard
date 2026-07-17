@@ -3,45 +3,181 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+  Game of Yield / Pensionizer brand
+  Base = calm ivory / dark grey (Medicare-like)
+  Flavor = logo green · yellow · red · blue (accents only)
+  Type = Figtree (Senior Planet companion)
+*/
 :root {
-  --background: oklch(0.12 0.03 250);
-  --foreground: oklch(0.95 0 0);
-  --card: oklch(0.18 0.04 250);
-  --card-foreground: oklch(0.95 0 0);
-  --popover: oklch(0.18 0.04 250);
-  --popover-foreground: oklch(0.95 0 0);
-  --primary: oklch(0.30 0.10 250);
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.20 0.04 250);
-  --secondary-foreground: oklch(0.88 0.01 250);
-  --muted: oklch(0.22 0.04 250);
-  --muted-foreground: oklch(0.60 0.03 250);
-  --accent: oklch(0.25 0.06 250);
-  --accent-foreground: oklch(0.95 0 0);
-  --destructive: oklch(0.55 0.22 25);
-  --destructive-foreground: oklch(0.95 0 0);
-  --border: oklch(0.25 0.06 250);
-  --input: oklch(0.25 0.06 250);
-  --ring: oklch(0.30 0.10 250);
-  --chart-1: oklch(0.30 0.10 250);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.15 0.04 250);
-  --sidebar-foreground: oklch(0.95 0 0);
-  --sidebar-primary: oklch(0.30 0.10 250);
-  --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.22 0.04 250);
-  --sidebar-accent-foreground: oklch(0.95 0 0);
-  --sidebar-border: oklch(0.25 0.06 250);
-  --sidebar-ring: oklch(0.30 0.10 250);
+  /* Logo flavor — Pensionizer Income Engine */
+  --gy-green: #459212;
+  --gy-yellow: #fcda0f;
+  --gy-red: #ca3a41;
+  --gy-blue: #117dae;
+  --gy-green-soft: #e8f3dc;
+  --gy-yellow-soft: #fff6c2;
+  --gy-red-soft: #f8e4e5;
+  --gy-blue-soft: #e3f1f8;
+
+  /* Calm base */
+  --gy-ink: #1b242c;
+  --gy-muted: #4a5560;
+  --gy-bg: #f6f3ee;
+  --gy-surface: #ffffff;
+  --gy-border: #d9d2c8;
+
+  /* Semantics */
+  --gy-success: var(--gy-green);
+  --gy-danger: var(--gy-red);
+  --gy-gold: #d4b40a;
+  --gy-gold-soft: var(--gy-yellow-soft);
+  --gy-navy: var(--gy-blue);
+  --gy-navy-soft: #0e5f85;
+
+  /* Type — Figtree; weights 400–700 only; tight scale */
+  --gy-font: Figtree, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+    sans-serif;
+  --gy-text-xs: 1rem; /* 16px labels / captions */
+  --gy-text-sm: 1rem; /* 16px UI / tables */
+  --gy-text-base: 1.125rem; /* 18px body — minimum */
+  --gy-text-lg: 1.25rem; /* 20px section titles / metrics */
+  --gy-text-xl: 1.375rem; /* 22px page title */
+  --gy-text-2xl: 1.5rem; /* 24px max heading */
+  --gy-leading: 1.55;
+  --gy-tracking: 0.01em;
+
+  /* Spacing — generous for senior UX */
+  --gy-space-1: 0.5rem;
+  --gy-space-2: 0.75rem;
+  --gy-space-3: 1rem;
+  --gy-space-4: 1.5rem;
+  --gy-space-5: 2rem;
+  --gy-space-6: 2.5rem;
+  --gy-space-section: 2rem;
+
+  /* Text-size control (A / A+ / A++) */
+  --gy-scale: 1;
+
+  /* Heat scale = logo pie (green → yellow → red) */
+  --gy-heat-best: var(--gy-green);
+  --gy-heat-good: #5aa51f;
+  --gy-heat-mid-good: #8bbb18;
+  --gy-heat-mid: var(--gy-yellow);
+  --gy-heat-mid-warm: #e5b40e;
+  --gy-heat-warm: #d9783a;
+  --gy-heat-poor: var(--gy-red);
+  --gy-heat-worst: #9e2c33;
+
+  /* Page aliases (components) */
+  --page-bg: var(--gy-bg);
+  --page-surface: var(--gy-surface);
+  --page-surface-2: #efebe4;
+  --page-text: var(--gy-ink);
+  --page-muted: var(--gy-muted);
+  --page-border: var(--gy-border);
+  --page-header: var(--gy-surface);
+  --page-accent: var(--gy-gold);
+  --page-accent-soft: var(--gy-yellow-soft);
+  --page-cta: var(--gy-blue);
+  --page-cta-text: #ffffff;
+  --page-brand: var(--gy-green);
+  --page-shadow: 0 1px 2px rgb(27 36 44 / 6%), 0 4px 12px rgb(27 36 44 / 4%);
+  --page-overlay: rgb(27 36 44 / 45%);
+  --page-focus: var(--gy-blue);
+
+  /* shadcn / Tailwind semantic tokens */
+  --background: var(--gy-bg);
+  --foreground: var(--gy-ink);
+  --card: var(--gy-surface);
+  --card-foreground: var(--gy-ink);
+  --popover: var(--gy-surface);
+  --popover-foreground: var(--gy-ink);
+  --primary: var(--gy-blue);
+  --primary-foreground: #ffffff;
+  --secondary: var(--gy-blue-soft);
+  --secondary-foreground: var(--gy-ink);
+  --muted: #efebe4;
+  --muted-foreground: var(--gy-muted);
+  --accent: var(--gy-green-soft);
+  --accent-foreground: var(--gy-ink);
+  --destructive: var(--gy-red);
+  --destructive-foreground: #ffffff;
+  --border: var(--gy-border);
+  --input: var(--gy-border);
+  --ring: var(--gy-blue);
+  --chart-1: var(--gy-blue);
+  --chart-2: var(--gy-green);
+  --chart-3: var(--gy-gold);
+  --chart-4: var(--gy-red);
+  --chart-5: #6b7280;
+  --success: var(--gy-green);
+  --warning: var(--gy-gold);
+  --radius: 0.5rem;
+}
+
+/* Dark GREY only — never blue wash */
+.dark {
+  --gy-bg: #1a1c1e;
+  --gy-surface: #2a2c2e;
+  --gy-ink: #f3efe8;
+  --gy-muted: #a8aeb4;
+  --gy-border: #3f4347;
+  --gy-green-soft: #24351a;
+  --gy-yellow-soft: #3a3410;
+  --gy-red-soft: #3a1e20;
+  --gy-blue-soft: #173040;
+
+  --page-bg: var(--gy-bg);
+  --page-surface: var(--gy-surface);
+  --page-surface-2: #232628;
+  --page-text: var(--gy-ink);
+  --page-muted: var(--gy-muted);
+  --page-border: var(--gy-border);
+  --page-header: #222426;
+  --page-accent: var(--gy-gold);
+  --page-accent-soft: var(--gy-yellow-soft);
+  --page-cta: #3ba3d0;
+  --page-cta-text: #1a1c1e;
+  --page-brand: #6bb83a;
+  --page-shadow: 0 1px 2px rgb(0 0 0 / 35%), 0 6px 16px rgb(0 0 0 / 28%);
+  --page-overlay: rgb(0 0 0 / 65%);
+  --page-focus: #3ba3d0;
+
+  --background: var(--gy-bg);
+  --foreground: var(--gy-ink);
+  --card: var(--gy-surface);
+  --card-foreground: var(--gy-ink);
+  --popover: var(--gy-surface);
+  --popover-foreground: var(--gy-ink);
+  --primary: #3ba3d0;
+  --primary-foreground: #1a1c1e;
+  --secondary: var(--gy-blue-soft);
+  --secondary-foreground: var(--gy-ink);
+  --muted: #232628;
+  --muted-foreground: var(--gy-muted);
+  --accent: var(--gy-green-soft);
+  --accent-foreground: var(--gy-ink);
+  --destructive: #e0575d;
+  --border: var(--gy-border);
+  --input: var(--gy-border);
+  --ring: #3ba3d0;
+  --success: #6bb83a;
+  --warning: var(--gy-gold);
 }
 
 @theme inline {
-  --font-sans: 'Geist', 'Geist Fallback';
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --font-sans: var(--font-figtree), var(--gy-font);
+  --font-mono: var(--font-figtree), var(--gy-font);
+
+  /* Remap Tailwind type so leftover text-xs cannot become 12px */
+  --text-xs: var(--gy-text-xs);
+  --text-sm: var(--gy-text-sm);
+  --text-base: var(--gy-text-base);
+  --text-lg: var(--gy-text-lg);
+  --text-xl: var(--gy-text-xl);
+  --text-2xl: var(--gy-text-2xl);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -61,30 +197,181 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 0.125rem);
+  --radius-xl: calc(var(--radius) + 0.25rem);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
+  html {
+    font-size: calc(100% * var(--gy-scale));
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-figtree), var(--gy-font);
+    font-size: var(--gy-text-base);
+    line-height: var(--gy-leading);
+    letter-spacing: var(--gy-tracking);
+    font-weight: 400;
+    background-color: var(--page-bg);
+    color: var(--page-text);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: 700;
+    letter-spacing: var(--gy-tracking);
+    color: var(--page-text);
+    line-height: 1.35;
+  }
+
+  a {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--page-focus);
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  .gy-tap {
+    min-height: 3rem; /* 48px preferred */
+    min-width: 2.75rem;
+  }
+
+  .gy-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gy-space-section);
+  }
+
+  .gy-stack-tight {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gy-space-4);
+  }
+
+  .gy-section-title {
+    font-size: var(--gy-text-lg);
+    font-weight: 700;
+    letter-spacing: var(--gy-tracking);
+    color: var(--foreground);
+    line-height: 1.35;
+  }
+
+  .gy-section-help {
+    font-size: var(--gy-text-sm);
+    color: var(--gy-muted);
+    line-height: var(--gy-leading);
+    max-width: 42rem;
+    margin-top: 0.35rem;
+  }
+
+  .gy-card {
+    background: var(--page-surface);
+    border: 1px solid var(--page-border);
+    border-radius: 0.75rem;
+    box-shadow: var(--page-shadow);
+  }
+
+  .gy-task-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    min-height: 5.5rem;
+    padding: 1.25rem 1.5rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--gy-border);
+    background: var(--gy-surface);
+    text-align: left;
+    box-shadow: var(--page-shadow);
+  }
+
+  .gy-task-card[data-active="true"],
+  .gy-task-card[aria-pressed="true"],
+  .gy-task-card[aria-selected="true"] {
+    border-color: var(--gy-blue);
+    background: var(--gy-blue-soft);
+    box-shadow: inset 0 0 0 2px var(--gy-blue);
+  }
+
+  /* Brand stripe — once near header */
+  .gy-brand-stripe {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    height: 4px;
+    width: 100%;
+  }
+
+  .gy-brand-stripe > :nth-child(1) {
+    background: var(--gy-green);
+  }
+  .gy-brand-stripe > :nth-child(2) {
+    background: var(--gy-yellow);
+  }
+  .gy-brand-stripe > :nth-child(3) {
+    background: var(--gy-red);
+  }
+
+  /* Heat chips — yellow uses dark ink */
+  .gy-chip-green {
+    background: var(--gy-green-soft);
+    color: var(--gy-green);
+  }
+  .gy-chip-yellow {
+    background: var(--gy-yellow-soft);
+    color: var(--gy-ink);
+  }
+  .gy-chip-red {
+    background: var(--gy-red-soft);
+    color: var(--gy-red);
+  }
+
+  .skip-to-content {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .skip-to-content:focus {
+    left: 1rem;
+    top: 1rem;
+    z-index: 100;
+    width: auto;
+    height: auto;
+    padding: 0.75rem 1.25rem;
+    background: var(--gy-blue);
+    color: #fff;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: var(--gy-text-base);
+    text-decoration: none;
   }
 }

@@ -1,31 +1,37 @@
-import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/next'
-import './globals.css'
+import type { Metadata } from "next"
+import { Figtree } from "next/font/google"
+import { Analytics } from "@vercel/analytics/next"
+import "./globals.css"
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+/* Figtree = Senior Planet companion font (Gotham is Adobe-licensed) */
+const figtree = Figtree({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-figtree",
+  display: "swap",
+})
 
 export const metadata: Metadata = {
-  title: 'TOP DOGS 20/20 PLAY DECK - CEF Index Daily Data & Rank',
-  description: 'TOP DOGS 20/20 PLAY DECK - Top 50 CEF Index daily data and rank for closed-end fund Z-scores, discounts, and distribution rates',
-  generator: 'v0.app',
+  title: "TOP DOGS 20/20 PLAY DECK - CEF Index Daily Data & Rank",
+  description:
+    "TOP DOGS 20/20 PLAY DECK - Top 50 CEF Index daily data and rank for closed-end fund Z-scores, discounts, and distribution rates",
+  generator: "v0.app",
   icons: {
     icon: [
       {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
+        url: "/icon-light-32x32.png",
+        media: "(prefers-color-scheme: light)",
       },
       {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
+        url: "/icon-dark-32x32.png",
+        media: "(prefers-color-scheme: dark)",
       },
       {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
+        url: "/icon.svg",
+        type: "image/svg+xml",
       },
     ],
-    apple: '/apple-icon.png',
+    apple: "/apple-icon.png",
   },
 }
 
@@ -35,10 +41,21 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="bg-background">
-      <body className="font-sans antialiased">
+    <html lang="en" className={`${figtree.variable} bg-background`} suppressHydrationWarning>
+      <head>
+        {/* Apply saved theme + text scale before paint to avoid flash */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('gy-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}var s=localStorage.getItem('gy-text-size');var scale=s==='xl'?1.16:s==='lg'?1.08:1;document.documentElement.style.setProperty('--gy-scale',String(scale))}catch(e){}})();`,
+          }}
+        />
+      </head>
+      <body className={`${figtree.className} antialiased`}>
+        <a href="#main-content" className="skip-to-content">
+          Skip to content
+        </a>
         {children}
-        {process.env.NODE_ENV === 'production' && <Analytics />}
+        {process.env.NODE_ENV === "production" && <Analytics />}
       </body>
     </html>
   )

@@ -95,43 +95,44 @@ export function getTopFunds(data: CEFData[], metric: SortMetric, count: number):
   return sorted.slice(0, count)
 }
 
+/** Brand-aligned heat colors (Game of Yield success / gold / danger scale) */
 export function getZScoreColor(zscore: number): string {
-  if (zscore <= -2.5) return "bg-[#228844]"
-  if (zscore <= -2.0) return "bg-[#3a8f4a]"
-  if (zscore <= -1.5) return "bg-[#6ea832]"
-  if (zscore <= -1.0) return "bg-[#c4a41a]"
-  if (zscore <= -0.5) return "bg-[#ffb100]"
-  if (zscore <= 0.5) return "bg-[#d48a10]"
-  if (zscore <= 1.0) return "bg-[#c06018]"
-  if (zscore <= 1.5) return "bg-[#b02020]"
-  return "bg-[#8a1818]"
+  if (zscore <= -2.5) return "bg-[var(--gy-heat-best)]"
+  if (zscore <= -2.0) return "bg-[var(--gy-heat-good)]"
+  if (zscore <= -1.5) return "bg-[var(--gy-heat-mid-good)]"
+  if (zscore <= -1.0) return "bg-[var(--gy-heat-mid)]"
+  if (zscore <= -0.5) return "bg-[var(--gy-heat-mid-warm)]"
+  if (zscore <= 0.5) return "bg-[var(--gy-heat-warm)]"
+  if (zscore <= 1.0) return "bg-[var(--gy-heat-poor)]"
+  if (zscore <= 1.5) return "bg-[var(--gy-heat-poor)]"
+  return "bg-[var(--gy-heat-worst)]"
 }
 
 export function getDiscountColor(discount: number): string {
-  if (discount <= -15) return "bg-[#228844]"
-  if (discount <= -10) return "bg-[#3a8f4a]"
-  if (discount <= -7) return "bg-[#6ea832]"
-  if (discount <= -4) return "bg-[#ffb100]"
-  if (discount <= 0) return "bg-[#d48a10]"
-  return "bg-[#b02020]"
+  if (discount <= -15) return "bg-[var(--gy-heat-best)]"
+  if (discount <= -10) return "bg-[var(--gy-heat-good)]"
+  if (discount <= -7) return "bg-[var(--gy-heat-mid-good)]"
+  if (discount <= -4) return "bg-[var(--gy-heat-mid)]"
+  if (discount <= 0) return "bg-[var(--gy-heat-mid-warm)]"
+  return "bg-[var(--gy-heat-poor)]"
 }
 
 export function getDistRateColor(rate: number): string {
-  if (rate >= 14) return "bg-[#228844]"
-  if (rate >= 12) return "bg-[#3a8f4a]"
-  if (rate >= 10) return "bg-[#6ea832]"
-  if (rate >= 8) return "bg-[#ffb100]"
-  if (rate >= 6) return "bg-[#d48a10]"
-  return "bg-[#b02020]"
+  if (rate >= 14) return "bg-[var(--gy-heat-best)]"
+  if (rate >= 12) return "bg-[var(--gy-heat-good)]"
+  if (rate >= 10) return "bg-[var(--gy-heat-mid-good)]"
+  if (rate >= 8) return "bg-[var(--gy-heat-mid)]"
+  if (rate >= 6) return "bg-[var(--gy-heat-mid-warm)]"
+  return "bg-[var(--gy-heat-poor)]"
 }
 
 export function getTrendColor(score: number): string {
-  if (score >= 80) return "bg-[#228844]"
-  if (score >= 65) return "bg-[#3a8f4a]"
-  if (score >= 50) return "bg-[#6ea832]"
-  if (score >= 35) return "bg-[#ffb100]"
-  if (score >= 20) return "bg-[#d48a10]"
-  return "bg-[#b02020]"
+  if (score >= 80) return "bg-[var(--gy-heat-best)]"
+  if (score >= 65) return "bg-[var(--gy-heat-good)]"
+  if (score >= 50) return "bg-[var(--gy-heat-mid-good)]"
+  if (score >= 35) return "bg-[var(--gy-heat-mid)]"
+  if (score >= 20) return "bg-[var(--gy-heat-mid-warm)]"
+  return "bg-[var(--gy-heat-poor)]"
 }
 
 export function getTechnicalColor(score: number): string {
@@ -139,10 +140,10 @@ export function getTechnicalColor(score: number): string {
 }
 
 export function getRankColor(score: number): string {
-  if (score >= 80) return "bg-[#228844]"
-  if (score >= 65) return "bg-[#3a8f4a]"
-  if (score >= 50) return "bg-[#6ea832]"
-  if (score >= 35) return "bg-[#ffb100]"
-  if (score >= 20) return "bg-[#d48a10]"
-  return "bg-[#b02020]"
+  if (score >= 80) return "bg-[var(--gy-heat-best)]"
+  if (score >= 65) return "bg-[var(--gy-heat-good)]"
+  if (score >= 50) return "bg-[var(--gy-heat-mid-good)]"
+  if (score >= 35) return "bg-[var(--gy-heat-mid)]"
+  if (score >= 20) return "bg-[var(--gy-heat-mid-warm)]"
+  return "bg-[var(--gy-heat-poor)]"
 }
