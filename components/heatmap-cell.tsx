@@ -111,9 +111,10 @@ export function HeatmapCell({ fund, metric, rank, rankScore }: HeatmapCellProps)
   const heatBg = getColorForMetric(fund, metric, rankScore)
   const value = getValueForMetric(fund, metric, rankScore)
   const darkInk = needsDarkInk(fund, metric, rankScore)
-  const fg = darkInk ? "text-[var(--gy-ink)]" : "text-white"
-  const fgMuted = darkInk ? "text-[var(--gy-ink)]/75" : "text-white/85"
-  const fgSoft = darkInk ? "bg-[var(--gy-ink)]/10" : "bg-white/15"
+  // Heat cards keep light-theme contrast in both themes (ink never flips to cream)
+  const fg = darkInk ? "text-[#1B242C]" : "text-white"
+  const fgMuted = darkInk ? "text-[#1B242C]/75" : "text-white/85"
+  const fgSoft = darkInk ? "bg-[#1B242C]/10" : "bg-white/15"
   const borderTone = darkInk ? "border-black/10" : "border-white/20"
 
   useEffect(() => {
