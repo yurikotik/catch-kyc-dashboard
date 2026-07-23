@@ -15,7 +15,7 @@ export function HeatmapGrid({ data, metric, count }: HeatmapGridProps) {
   const rankMap = computeRank(data)
 
   return (
-    <div className="grid grid-cols-4 gap-1.5">
+    <div className="grid h-full min-h-[16rem] grid-cols-4 gap-1.5 lg:min-h-0 lg:auto-rows-fr">
       {funds.map((fund, index) => (
         <HeatmapCell
           key={fund.symbol}

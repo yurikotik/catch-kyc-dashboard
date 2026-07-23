@@ -81,16 +81,16 @@ export function HeatmapCell({ fund, metric, size, rank, rankScore }: HeatmapCell
   const value = getValueForMetric(fund, metric, rankScore)
 
   const sizeClasses = {
-    sm: "min-h-16",
-    md: "min-h-20",
-    lg: "min-h-24",
+    sm: "min-h-14 lg:min-h-0 lg:h-full",
+    md: "min-h-20 lg:min-h-0 lg:h-full",
+    lg: "min-h-24 lg:min-h-0 lg:h-full",
   }
 
   return (
-    <div className="relative">
+    <div className="relative h-full min-h-0">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className={`${colorClass} ${sizeClasses[size]} w-full rounded-lg p-2 flex flex-col items-center justify-center gap-0.5 transition-all duration-200 active:scale-95 cursor-pointer border border-white/10`}
+        className={`${colorClass} ${sizeClasses[size]} w-full rounded-lg p-1.5 sm:p-2 flex flex-col items-center justify-center gap-0.5 transition-all duration-200 active:scale-95 cursor-pointer border border-white/10`}
         aria-label={`${fund.symbol}: ${getMetricLabel(metric, fund)} ${value}`}
         aria-expanded={isExpanded}
       >

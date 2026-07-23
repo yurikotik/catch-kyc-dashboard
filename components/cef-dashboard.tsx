@@ -11,37 +11,37 @@ const pillarMetrics: {
   value: SortMetric
   label: string
   description: string
-  action: string
+  short: string
 }[] = [
   {
     value: "zscore",
     label: "Z-Score",
     description: "How cheap vs its own history",
-    action: "Check Z-Score",
+    short: "Z-Score",
   },
   {
     value: "discount",
     label: "Discount",
     description: "Price vs fund value (NAV)",
-    action: "Check Discount",
+    short: "Discount",
   },
   {
     value: "distribution_rate",
     label: "Current Yield",
     description: "Current distribution yield",
-    action: "Check Current Yield",
+    short: "Yield",
   },
   {
     value: "technical",
     label: "Technical",
     description: "Chart rating from Barchart",
-    action: "Check Technical",
+    short: "Technical",
   },
   {
     value: "trend",
     label: "Trend",
     description: "Recent momentum score",
-    action: "Check Trend",
+    short: "Trend",
   },
 ]
 
@@ -51,8 +51,23 @@ const allMetrics = [
     value: "rank" as SortMetric,
     label: "RANK*",
     description: "40% Z + 20% Current Yield + 20% Technical + 20% Discount",
-    action: "See RANK*",
+    short: "RANK*",
   },
+]
+
+const rankOptions: {
+  value: SortMetric
+  label: string
+  description: string
+  short: string
+}[] = [
+  {
+    value: "rank",
+    label: "RANK*",
+    description: "Combined score — best overall picks",
+    short: "RANK*",
+  },
+  ...pillarMetrics,
 ]
 
 type TextSize = "md" | "lg" | "xl"
@@ -136,85 +151,75 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
   const hasFunds = funds.length > 0
 
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--page-bg)] text-[var(--page-text)]">
-      <header className="sticky top-0 z-30 border-b border-[var(--page-border)] bg-[var(--page-header)]">
+    <div className="flex h-dvh flex-col overflow-hidden bg-[var(--page-bg)] text-[var(--page-text)] max-lg:h-auto max-lg:min-h-dvh max-lg:overflow-visible">
+      <header className="shrink-0 border-b border-[var(--page-border)] bg-[var(--page-header)]">
         <div className="gy-brand-stripe" aria-hidden="true">
           <span />
           <span />
           <span />
         </div>
-        <div className="mx-auto w-full max-w-6xl px-6 py-4 md:px-8">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="min-w-0">
-              <p className="text-[length:var(--gy-text-sm)] font-bold tracking-[var(--gy-tracking)]">
-                <span className="text-[var(--gy-green)]">Game of Yield</span>
-                <span className="text-[var(--gy-red)]"> · Income Engine</span>
-              </p>
-              <h1 className="mt-0.5 text-[length:var(--gy-text-xl)] font-bold leading-tight">
-                Top Dogs 20/20 Play Deck
-              </h1>
+
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-2 md:px-6">
+          <div className="min-w-0">
+            <p className="truncate text-[length:var(--gy-text-sm)] font-bold leading-tight tracking-[var(--gy-tracking)]">
+              <span className="text-[var(--gy-green)]">Game of Yield</span>
+              <span className="text-[var(--gy-red)]"> · Income Engine</span>
+            </p>
+            <h1 className="truncate text-[length:var(--gy-text-lg)] font-bold leading-tight lg:text-[length:var(--gy-text-xl)]">
+              Top Dogs 20/20 Play Deck
+            </h1>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-1.5">
+            <div
+              className="inline-flex overflow-hidden rounded-md border border-[var(--page-border)]"
+              role="group"
+              aria-label="Text size"
+            >
+              {(
+                [
+                  { id: "md", label: "A", title: "Default text" },
+                  { id: "lg", label: "A+", title: "Larger text" },
+                  { id: "xl", label: "A++", title: "Largest text" },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  title={opt.title}
+                  onClick={() => setTextSize(opt.id)}
+                  className={`min-h-9 min-w-9 px-2 text-[length:var(--gy-text-sm)] font-semibold transition-colors lg:min-h-10 lg:min-w-10 ${
+                    textSize === opt.id
+                      ? "bg-[var(--page-cta)] text-[var(--page-cta-text)]"
+                      : "bg-[var(--page-surface)] text-[var(--page-muted)] hover:bg-[var(--page-surface-2)]"
+                  }`}
+                  aria-pressed={textSize === opt.id}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
-              <div
-                className="inline-flex overflow-hidden rounded-md border border-[var(--page-border)]"
-                role="group"
-                aria-label="Text size"
-              >
-                {(
-                  [
-                    { id: "md", label: "A", title: "Default text" },
-                    { id: "lg", label: "A+", title: "Larger text" },
-                    { id: "xl", label: "A++", title: "Largest text" },
-                  ] as const
-                ).map((opt) => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    title={opt.title}
-                    onClick={() => setTextSize(opt.id)}
-                    className={`gy-tap min-w-12 px-3 text-[length:var(--gy-text-base)] font-semibold transition-colors ${
-                      textSize === opt.id
-                        ? "bg-[var(--page-cta)] text-[var(--page-cta-text)]"
-                        : "bg-[var(--page-surface)] text-[var(--page-muted)] hover:bg-[var(--page-surface-2)]"
-                    }`}
-                    aria-pressed={textSize === opt.id}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
-                className="gy-tap rounded-md border border-[var(--page-border)] bg-[var(--page-surface)] px-4 text-[length:var(--gy-text-base)] font-semibold text-[var(--page-text)] hover:bg-[var(--page-surface-2)]"
-                aria-label={theme === "light" ? "Switch to dark theme" : "Switch to light theme"}
-              >
-                {theme === "light" ? "Dark" : "Light"}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
+              className="min-h-9 rounded-md border border-[var(--page-border)] bg-[var(--page-surface)] px-3 text-[length:var(--gy-text-sm)] font-semibold text-[var(--page-text)] hover:bg-[var(--page-surface-2)] lg:min-h-10"
+              aria-label={theme === "light" ? "Switch to dark theme" : "Switch to light theme"}
+            >
+              {theme === "light" ? "Dark" : "Light"}
+            </button>
           </div>
         </div>
-      </header>
 
-      <main
-        id="main-content"
-        className="gy-stack mx-auto w-full max-w-6xl flex-1 px-6 py-8 md:px-8"
-      >
-        <section className="gy-task-card w-full !min-h-0">
-          <h2 className="text-[length:var(--gy-text-2xl)] font-bold leading-tight">
-            What do you want to check?
-          </h2>
-          <p className="gy-section-help !mt-0 max-w-2xl text-[length:var(--gy-text-base)]">
-            Browse the Top 20 closed-end funds by the measure you care about. Open a fund for
-            price, discount, and income details.
-          </p>
-
-          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-[length:var(--gy-text-sm)]">
-            <span className="inline-flex items-center gap-2 font-semibold">
+        {/* Sync in header — keeps mobile heatmap above the fold */}
+        <div className="border-t border-[var(--page-border)] bg-[var(--page-surface)]">
+          <div
+            className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-3 gap-y-0.5 px-4 py-1.5 text-[length:var(--gy-text-sm)] md:px-6"
+            aria-label="Data status"
+          >
+            <span className="inline-flex items-center gap-1.5 font-semibold">
               <span
-                className={`h-2.5 w-2.5 rounded-full ${
+                className={`h-2 w-2 rounded-full ${
                   isLive
                     ? syncStatus === "partial"
                       ? "bg-[var(--gy-gold)]"
@@ -226,69 +231,65 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
               {isLive ? (syncStatus === "partial" ? "Partial sync" : "Data synced") : "Sample data"}
             </span>
             {lastFetchedLabel && (
-              <span className="text-[var(--page-muted)]">Last fetched: {lastFetchedLabel}</span>
+              <span className="truncate text-[var(--page-muted)]">Fetched {lastFetchedLabel}</span>
             )}
-            {dataDateLabel && (
-              <span className="text-[var(--page-muted)]">Data as of {dataDateLabel}</span>
-            )}
+            {dataDateLabel && <span className="text-[var(--page-muted)]">As of {dataDateLabel}</span>}
+            <span className="hidden text-[var(--page-muted)] lg:inline">· Tap a fund for details</span>
           </div>
-        </section>
+        </div>
+      </header>
 
-        <section aria-label="Choose a ranking">
-          <h3 className="gy-section-title">Choose a ranking</h3>
-          <p className="gy-section-help">One tap sets how the Top 20 are ordered.</p>
+      <main
+        id="main-content"
+        className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-2 overflow-hidden px-4 py-2 md:px-6 max-lg:overflow-x-hidden max-lg:overflow-y-auto lg:gap-2 lg:py-2.5"
+      >
+        <section className="shrink-0" aria-label="Choose a ranking">
           <div
-            className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+            className="flex gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:grid lg:grid-cols-6 lg:overflow-visible"
             role="tablist"
           >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeMetric === "rank"}
-              aria-pressed={activeMetric === "rank"}
-              onClick={() => setActiveMetric("rank")}
-              className="gy-task-card gy-tap w-full transition-colors hover:bg-[var(--page-surface-2)]"
-            >
-              <span className="block text-[length:var(--gy-text-lg)] font-bold text-[var(--page-cta)]">
-                See RANK*
-              </span>
-              <span className="block text-[length:var(--gy-text-sm)] text-[var(--page-muted)]">
-                Combined score — best overall picks
-              </span>
-            </button>
-
-            {pillarMetrics.map((m) => (
-              <button
-                key={m.value}
-                type="button"
-                role="tab"
-                aria-selected={activeMetric === m.value}
-                aria-pressed={activeMetric === m.value}
-                onClick={() => setActiveMetric(m.value)}
-                className="gy-task-card gy-tap w-full transition-colors hover:bg-[var(--page-surface-2)]"
-              >
-                <span className="block text-[length:var(--gy-text-lg)] font-bold">{m.action}</span>
-                <span className="block text-[length:var(--gy-text-sm)] text-[var(--page-muted)]">
-                  {m.description}
-                </span>
-              </button>
-            ))}
+            {rankOptions.map((m) => {
+              const selected = activeMetric === m.value
+              return (
+                <button
+                  key={m.value}
+                  type="button"
+                  role="tab"
+                  title={m.description}
+                  aria-selected={selected}
+                  aria-pressed={selected}
+                  onClick={() => setActiveMetric(m.value)}
+                  className={`min-h-9 shrink-0 rounded-md border px-3 text-[length:var(--gy-text-sm)] font-semibold transition-colors lg:min-h-10 lg:w-full lg:px-2 ${
+                    selected
+                      ? "border-[var(--gy-blue)] bg-[var(--gy-blue-soft)] text-[var(--page-text)] shadow-[inset_0_0_0_2px_var(--gy-blue)]"
+                      : "border-[var(--page-border)] bg-[var(--page-surface)] text-[var(--page-text)] hover:bg-[var(--page-surface-2)]"
+                  }`}
+                >
+                  <span className="lg:hidden">{m.short}</span>
+                  <span className="hidden lg:inline">
+                    {m.label === "Current Yield" ? "Yield" : m.label}
+                  </span>
+                </button>
+              )
+            })}
           </div>
+          <p className="mt-1 truncate text-[length:var(--gy-text-sm)] text-[var(--page-muted)]">
+            {currentMetric?.label}: {currentMetric?.description}
+          </p>
         </section>
 
-        <section>
-          <h3 className="gy-section-title">Top 20 — {currentMetric?.label}</h3>
-          <p className="gy-section-help">
-            {currentMetric?.description}. Tap any fund for details.
-          </p>
-
-          <div className="mt-4">
+        {/* Heatmap — fills leftover height on desktop; first content focus on mobile */}
+        <section className="flex min-h-0 flex-1 flex-col gap-1 max-lg:flex-none">
+          <h2 className="shrink-0 text-[length:var(--gy-text-sm)] font-bold tracking-[var(--gy-tracking)]">
+            Top 20 — {currentMetric?.label}
+          </h2>
+          <div className="min-h-0 flex-1 max-lg:flex-none">
             {hasFunds ? (
               <HeatmapGrid data={funds} metric={activeMetric} count={20} />
             ) : (
-              <div className="gy-task-card w-full items-center text-center">
-                <p className="text-[length:var(--gy-text-lg)] font-bold">No fund data yet</p>
-                <p className="text-[length:var(--gy-text-base)] text-[var(--page-muted)]">
+              <div className="rounded-lg border border-[var(--page-border)] bg-[var(--page-surface)] px-4 py-6 text-center shadow-[var(--page-shadow)]">
+                <p className="text-[length:var(--gy-text-base)] font-bold">No fund data yet</p>
+                <p className="mt-1 text-[length:var(--gy-text-sm)] text-[var(--page-muted)]">
                   Run the daily sync to load the Top 20 play deck.
                 </p>
               </div>
@@ -296,72 +297,60 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
           </div>
         </section>
 
-        <section className="gy-task-card w-full !min-h-0">
-          <h3 className="gy-section-title">Color guide</h3>
-          <div className="mt-3 w-full">
+        <section className="shrink-0 space-y-1.5">
+          <div className="rounded-lg border border-[var(--page-border)] bg-[var(--page-surface)] px-3 py-1.5 shadow-[var(--page-shadow)]">
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <h3 className="text-[length:var(--gy-text-sm)] font-bold">Color guide</h3>
+              <button
+                type="button"
+                className="text-[length:var(--gy-text-sm)] font-semibold text-[var(--gy-blue)] underline decoration-[var(--gy-blue)] underline-offset-2"
+              >
+                Top 50 index →
+              </button>
+            </div>
             <HeatmapLegend metric={activeMetric} />
           </div>
-        </section>
 
-        {hasFunds && (
-          <section className="grid grid-cols-1 gap-3 sm:grid-cols-3" aria-label="Averages">
-            <StatCard
-              label="Average NAV Discount"
-              value={`${(funds.reduce((s, f) => s + f.discount, 0) / funds.length).toFixed(1)}%`}
-            />
-            <StatCard
-              label="Average Current Yield"
-              value={`${(funds.reduce((s, f) => s + f.distribution_rate, 0) / funds.length).toFixed(1)}%`}
-              emphasize
-            />
-            <StatCard
-              label="Average Z-Score"
-              value={(funds.reduce((s, f) => s + getEffectiveZScore(f), 0) / funds.length).toFixed(2)}
-            />
-          </section>
-        )}
-
-        <section>
-          <button
-            type="button"
-            className="gy-task-card gy-tap flex w-full flex-row items-center justify-between gap-4 border-l-4 border-l-[var(--gy-green)] !min-h-0 transition-colors hover:bg-[var(--page-surface-2)]"
-          >
-            <span>
-              <span className="block text-[length:var(--gy-text-lg)] font-bold">
-                Open Top 50 index
-              </span>
-              <span className="mt-1 block text-[length:var(--gy-text-sm)] text-[var(--page-muted)]">
-                Full watchlist with all five measures
-              </span>
-            </span>
-            <span
-              className="text-[length:var(--gy-text-xl)] font-bold text-[var(--gy-blue)]"
-              aria-hidden
-            >
-              →
-            </span>
-          </button>
+          {hasFunds && (
+            <div className="grid grid-cols-3 gap-1.5" aria-label="Averages">
+              <StatCard
+                label="Average NAV Discount"
+                value={`${(funds.reduce((s, f) => s + f.discount, 0) / funds.length).toFixed(1)}%`}
+              />
+              <StatCard
+                label="Average Current Yield"
+                value={`${(funds.reduce((s, f) => s + f.distribution_rate, 0) / funds.length).toFixed(1)}%`}
+                emphasize
+              />
+              <StatCard
+                label="Average Z-Score"
+                value={(
+                  funds.reduce((s, f) => s + getEffectiveZScore(f), 0) / funds.length
+                ).toFixed(2)}
+              />
+            </div>
+          )}
         </section>
       </main>
 
-      <footer className="border-t border-[var(--page-border)] bg-[var(--page-header)]">
-        <div className="mx-auto max-w-6xl px-6 py-6 text-center md:px-8">
+      <footer className="shrink-0 border-t border-[var(--page-border)] bg-[var(--page-header)]">
+        <div className="mx-auto flex max-w-6xl flex-col gap-0.5 px-4 py-1.5 text-center md:px-6 lg:flex-row lg:items-center lg:justify-between lg:py-2 lg:text-left">
           <p className="text-[length:var(--gy-text-sm)] text-[var(--page-muted)]">
-            Data sourced from{" "}
+            Data from{" "}
             <span className="font-semibold text-[var(--page-text)] underline decoration-[var(--gy-blue)]">
               CEF Connect
             </span>{" "}
-            and{" "}
+            &{" "}
             <span className="font-semibold text-[var(--page-text)] underline decoration-[var(--gy-blue)]">
               Barchart
             </span>
+            <span className="hidden sm:inline">
+              {" "}
+              · RANK* = 40% Z + 20% Yield + 20% Tech + 20% Discount
+            </span>
           </p>
-          <p className="mt-2 text-[length:var(--gy-text-sm)] leading-relaxed text-[var(--page-muted)]">
-            RANK* = 40% Z-Score + 20% Current Yield + 20% Technical + 20% Discount (Top 20 from the
-            watchlist)
-          </p>
-          <p className="mt-3 text-[length:var(--gy-text-sm)] text-[var(--page-muted)]">
-            Need help? Email your Game of Yield coach or ask in the club chat.
+          <p className="text-[length:var(--gy-text-sm)] text-[var(--page-muted)]">
+            Need help? Ask your Game of Yield coach.
           </p>
         </div>
       </footer>
@@ -379,10 +368,12 @@ function StatCard({
   emphasize?: boolean
 }) {
   return (
-    <div className="gy-task-card w-full items-center !min-h-0 text-center">
-      <span className="block text-[length:var(--gy-text-sm)] text-[var(--page-muted)]">{label}</span>
+    <div className="rounded-lg border border-[var(--page-border)] bg-[var(--page-surface)] px-2 py-1.5 text-center shadow-[var(--page-shadow)]">
+      <span className="block text-[length:var(--gy-text-sm)] leading-tight text-[var(--page-muted)]">
+        {label}
+      </span>
       <span
-        className={`mt-1 block text-[length:var(--gy-text-xl)] font-bold ${
+        className={`mt-0.5 block text-[length:var(--gy-text-base)] font-bold leading-tight lg:text-[length:var(--gy-text-lg)] ${
           emphasize ? "text-[var(--gy-gold)]" : "text-[var(--page-text)]"
         }`}
       >
