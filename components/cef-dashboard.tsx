@@ -27,9 +27,9 @@ const pillarMetrics: {
   },
   {
     value: "distribution_rate",
-    label: "Income rate",
+    label: "Current Yield",
     description: "Current distribution yield",
-    action: "Check Income",
+    action: "Check Current Yield",
   },
   {
     value: "technical",
@@ -50,7 +50,7 @@ const allMetrics = [
   {
     value: "rank" as SortMetric,
     label: "RANK*",
-    description: "40% Z + 20% Income + 20% Technical + 20% Discount",
+    description: "40% Z + 20% Current Yield + 20% Technical + 20% Discount",
     action: "See RANK*",
   },
 ]
@@ -306,11 +306,11 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
         {hasFunds && (
           <section className="grid grid-cols-1 gap-3 sm:grid-cols-3" aria-label="Averages">
             <StatCard
-              label="Average discount"
+              label="Average NAV Discount"
               value={`${(funds.reduce((s, f) => s + f.discount, 0) / funds.length).toFixed(1)}%`}
             />
             <StatCard
-              label="Average income rate"
+              label="Average Current Yield"
               value={`${(funds.reduce((s, f) => s + f.distribution_rate, 0) / funds.length).toFixed(1)}%`}
               emphasize
             />
@@ -357,7 +357,7 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
             </span>
           </p>
           <p className="mt-2 text-[length:var(--gy-text-sm)] leading-relaxed text-[var(--page-muted)]">
-            RANK* = 40% Z-Score + 20% Income + 20% Technical + 20% Discount (Top 20 from the
+            RANK* = 40% Z-Score + 20% Current Yield + 20% Technical + 20% Discount (Top 20 from the
             watchlist)
           </p>
           <p className="mt-3 text-[length:var(--gy-text-sm)] text-[var(--page-muted)]">

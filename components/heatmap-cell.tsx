@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useId, useRef, useState } from "react"
+import { useState } from "react"
 import type { CEFData, SortMetric } from "@/lib/cef-data"
 import {
   getZScoreColor,
@@ -28,36 +28,6 @@ function getColorForMetric(fund: CEFData, metric: SortMetric, rankScore?: number
     case "technical":
       return getTechnicalColor(fund.technical_rating)
   }
-}
-
-/** Yellow / lime / gold bands need dark ink; green / orange / red use white */
-function needsDarkInk(fund: CEFData, metric: SortMetric, rankScore?: number): boolean {
-  const score =
-    metric === "rank"
-      ? (rankScore ?? 0)
-      : metric === "zscore" || metric === "zscore_1y"
-        ? getEffectiveZScore(fund)
-        : metric === "discount"
-          ? fund.discount
-          : metric === "distribution_rate"
-            ? fund.distribution_rate
-            : metric === "trend"
-              ? fund.trend
-              : fund.technical_rating
-
-  if (metric === "rank" || metric === "trend" || metric === "technical") {
-    return score >= 20 && score < 65
-  }
-  if (metric === "zscore" || metric === "zscore_1y") {
-    return score > -2.0 && score <= 0.5
-  }
-  if (metric === "discount") {
-    return score > -10 && score <= 0
-  }
-  if (metric === "distribution_rate") {
-    return score >= 6 && score < 12
-  }
-  return false
 }
 
 function getValueForMetric(fund: CEFData, metric: SortMetric, rankScore?: number): string {
@@ -89,7 +59,7 @@ function getMetricLabel(metric: SortMetric, fund?: CEFData): string {
     case "discount":
       return "Discount"
     case "distribution_rate":
-      return "Income rate"
+      return "Current Yield"
     case "trend":
       return "Trend"
     case "technical":
@@ -100,183 +70,131 @@ function getMetricLabel(metric: SortMetric, fund?: CEFData): string {
 interface HeatmapCellProps {
   fund: CEFData
   metric: SortMetric
+  size: "sm" | "md" | "lg"
   rank: number
   rankScore?: number
 }
 
-export function HeatmapCell({ fund, metric, rank, rankScore }: HeatmapCellProps) {
+export function HeatmapCell({ fund, metric, size, rank, rankScore }: HeatmapCellProps) {
   const [isExpanded, setIsExpanded] = useState(false)
-  const dialogRef = useRef<HTMLDivElement>(null)
-  const titleId = useId()
-  const heatBg = getColorForMetric(fund, metric, rankScore)
+  const colorClass = getColorForMetric(fund, metric, rankScore)
   const value = getValueForMetric(fund, metric, rankScore)
-  const darkInk = needsDarkInk(fund, metric, rankScore)
-  // Heat cards keep light-theme contrast in both themes (ink never flips to cream)
-  const fg = darkInk ? "text-[#1B242C]" : "text-white"
-  const fgMuted = darkInk ? "text-[#1B242C]/75" : "text-white/85"
-  const fgSoft = darkInk ? "bg-[#1B242C]/10" : "bg-white/15"
-  const borderTone = darkInk ? "border-black/10" : "border-white/20"
 
-  useEffect(() => {
-    if (!isExpanded) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setIsExpanded(false)
-    }
-    window.addEventListener("keydown", onKey)
-    dialogRef.current?.focus()
-    return () => window.removeEventListener("keydown", onKey)
-  }, [isExpanded])
+  const sizeClasses = {
+    sm: "min-h-16",
+    md: "min-h-20",
+    lg: "min-h-24",
+  }
 
   return (
     <div className="relative">
       <button
-        type="button"
-        onClick={() => setIsExpanded(true)}
-        className={`gy-tap flex min-h-[5.5rem] w-full items-center gap-3 rounded-xl border px-4 py-3.5 text-left shadow-[var(--page-shadow)] transition-opacity hover:opacity-95 ${heatBg} ${fg} ${borderTone}`}
-        aria-label={`Rank ${rank}. ${fund.symbol}: ${getMetricLabel(metric, fund)} ${value}. Open details.`}
+        onClick={() => setIsExpanded(!isExpanded)}
+        className={`${colorClass} ${sizeClasses[size]} w-full rounded-lg p-2 flex flex-col items-center justify-center gap-0.5 transition-all duration-200 active:scale-95 cursor-pointer border border-white/10`}
+        aria-label={`${fund.symbol}: ${getMetricLabel(metric, fund)} ${value}`}
         aria-expanded={isExpanded}
-        aria-haspopup="dialog"
       >
-        <div className="min-w-0 flex-1">
-          <p className={`text-[length:var(--gy-text-sm)] font-semibold ${fgMuted}`}>#{rank}</p>
-          <p className="truncate text-[length:var(--gy-text-lg)] font-bold leading-tight">
-            {fund.symbol}
-          </p>
-          <p className={`mt-0.5 truncate text-[length:var(--gy-text-sm)] ${fgMuted}`}>
-            {getMetricLabel(metric, fund)}
-          </p>
-        </div>
-        <div className={`shrink-0 rounded-lg px-3 py-2 text-center ${fgSoft}`}>
-          <p className="text-[length:var(--gy-text-xl)] font-bold leading-none tabular-nums">
-            {value}
-          </p>
-        </div>
-        <span className={`shrink-0 text-[length:var(--gy-text-lg)] font-bold ${fgMuted}`} aria-hidden>
-          →
+        <span className="absolute top-1 left-1.5 text-[9px] font-mono text-white/50">
+          {rank}
         </span>
+        <span className="text-sm font-bold text-white tracking-wide">
+          {fund.symbol}
+        </span>
+        <span className="text-xs font-mono text-white/90">{value}</span>
       </button>
 
       {isExpanded && (
         <>
+          {/* Backdrop */}
           <div
-            className="fixed inset-0 z-30"
-            style={{ background: "var(--page-overlay)" }}
+            className="fixed inset-0 z-30 bg-black/60"
             onClick={() => setIsExpanded(false)}
-            aria-hidden
           />
-          <div
-            ref={dialogRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
-            tabIndex={-1}
-            className="fixed left-4 right-4 top-1/2 z-40 mx-auto flex max-h-[85vh] w-auto max-w-md -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-[var(--page-border)] bg-[var(--page-surface)] shadow-[var(--page-shadow)] outline-none"
-          >
-            {/* Heat header — full-bleed, no task-card padding clash */}
-            <div className={`${heatBg} ${fg} px-5 py-5`}>
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <p className={`text-[length:var(--gy-text-sm)] font-semibold ${fgMuted}`}>
-                    Rank #{rank}
-                  </p>
-                  <h4
-                    id={titleId}
-                    className="mt-1 text-[length:var(--gy-text-2xl)] font-bold leading-tight"
-                  >
-                    {fund.symbol}
-                  </h4>
-                  <p className={`mt-2 text-[length:var(--gy-text-base)] leading-snug ${fgMuted}`}>
-                    {fund.name}
-                  </p>
-                </div>
-                <div className={`shrink-0 rounded-lg px-3 py-2.5 text-right ${fgSoft}`}>
-                  <p className={`text-[length:var(--gy-text-sm)] font-medium ${fgMuted}`}>
-                    {getMetricLabel(metric, fund)}
-                  </p>
-                  <p className="text-[length:var(--gy-text-xl)] font-bold tabular-nums leading-tight">
-                    {value}
-                  </p>
-                </div>
+          {/* Card Detail */}
+          <div className="fixed z-40 left-4 right-4 top-1/2 -translate-y-1/2 bg-card border border-[#003377]/60 rounded-xl shadow-2xl shadow-[#003377]/30 overflow-hidden max-w-sm mx-auto">
+            {/* Header bar with rank color */}
+            <div className={`${getColorForMetric(fund, "rank", rankScore)} px-4 py-3 flex items-center justify-between`}>
+              <div>
+                <h4 className="text-lg font-bold text-white">{fund.symbol}</h4>
+                <p className="text-[11px] text-white/80 leading-tight">{fund.name}</p>
               </div>
-              {metric !== "rank" && rankScore != null && (
-                <p className={`mt-4 text-[length:var(--gy-text-sm)] font-semibold ${fgMuted}`}>
-                  RANK* score:{" "}
-                  <span className={`text-[length:var(--gy-text-lg)] font-bold ${fg}`}>
-                    {rankScore}
+              <div className="flex flex-col items-end gap-0.5">
+                <span className="text-[10px] text-white/60 uppercase tracking-wider">RANK*</span>
+                <span className="text-xl font-bold text-white font-mono">{rankScore ?? "--"}</span>
+              </div>
+            </div>
+
+            {/* Essential data */}
+            <div className="p-4">
+              {/* Price & NAV row */}
+              <div className="flex gap-3 mb-3">
+                <div className="flex-1 bg-[#003377]/25 rounded-lg p-2.5 text-center border border-[#003377]/30">
+                  <span className="block text-[10px] text-white/50 uppercase tracking-wider mb-0.5">Price</span>
+                  <span className="text-base font-bold font-mono text-white">${fund.price.toFixed(2)}</span>
+                </div>
+                <div className="flex-1 bg-[#003377]/25 rounded-lg p-2.5 text-center border border-[#003377]/30">
+                  <span className="block text-[10px] text-white/50 uppercase tracking-wider mb-0.5">NAV</span>
+                  <span className="text-base font-bold font-mono text-white">${fund.nav.toFixed(2)}</span>
+                </div>
+                <div className="flex-1 bg-[#003377]/25 rounded-lg p-2.5 text-center border border-[#003377]/30">
+                  <span className="block text-[10px] text-white/50 uppercase tracking-wider mb-0.5">Discount</span>
+                  <span className={`text-base font-bold font-mono ${fund.discount < 0 ? "text-[#228844]" : "text-[#b02020]"}`}>
+                    {fund.discount.toFixed(1)}%
                   </span>
-                </p>
-              )}
-            </div>
-
-            <div className="overflow-y-auto p-5">
-              <div className="mb-4 grid grid-cols-3 gap-2">
-                <MetricBox label="Price" value={`$${fund.price.toFixed(2)}`} />
-                <MetricBox label="NAV" value={`$${fund.nav.toFixed(2)}`} />
-                <MetricBox
-                  label="Discount"
-                  value={`${fund.discount.toFixed(1)}%`}
-                  tone={fund.discount < 0 ? "success" : "danger"}
-                />
-              </div>
-
-              <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                <MetricBox
-                  label="Income rate"
-                  value={`${fund.distribution_rate.toFixed(1)}%`}
-                  tone="gold"
-                />
-                <MetricBox
-                  label={`Z-Score (${fund.zscore_window})`}
-                  value={getEffectiveZScore(fund).toFixed(2)}
-                  tone={getEffectiveZScore(fund) < 0 ? "success" : "danger"}
-                />
-                <MetricBox
-                  label="Technical"
-                  value={`${fund.technical_rating}`}
-                  tone={
-                    fund.technical_rating >= 65
-                      ? "success"
-                      : fund.technical_rating >= 35
-                        ? "gold"
-                        : "danger"
-                  }
-                />
-                <MetricBox
-                  label="Trend"
-                  value={`${fund.trend}`}
-                  tone={fund.trend >= 65 ? "success" : fund.trend >= 35 ? "gold" : "danger"}
-                />
-                <MetricBox
-                  label="Borrowing"
-                  value={`${fund.leverage.toFixed(0)}%`}
-                  tone={fund.leverage < 25 ? "success" : fund.leverage < 35 ? "gold" : "danger"}
-                />
-                <MetricBox label="Volume" value={fund.volume.toLocaleString()} />
-              </div>
-
-              <div className="rounded-xl border border-[var(--page-border)] bg-[var(--page-surface-2)] p-3">
-                <p className="mb-2 text-[length:var(--gy-text-sm)] font-semibold text-[var(--page-muted)]">
-                  Z-Score breakdown
-                </p>
-                <div className="flex gap-6">
-                  <ZYear label="1Y" value={fund.zscore_1y} />
-                  <ZYear label="3Y" value={fund.zscore_3y} />
-                  <ZYear label="5Y" value={fund.zscore_5y} />
                 </div>
               </div>
 
-              <p className="mt-3 text-[length:var(--gy-text-sm)] text-[var(--page-muted)]">
-                Technical signal:{" "}
-                <span className="font-semibold text-[var(--page-text)]">
-                  {fund.technical_signal ?? "n/a"}
-                </span>
-              </p>
+              {/* 5 Pillars */}
+              <div className="grid grid-cols-5 gap-1.5 mb-3">
+                <PillarMini label="Yield" value={`${fund.distribution_rate.toFixed(1)}%`} color="text-[#ffb100]" />
+                <PillarMini label="Disc" value={`${fund.discount.toFixed(1)}%`} color={fund.discount < 0 ? "text-[#228844]" : "text-[#b02020]"} />
+                <PillarMini label="Z-Score" value={`${getEffectiveZScore(fund).toFixed(2)}`} color={getEffectiveZScore(fund) < 0 ? "text-[#228844]" : "text-[#b02020]"} />
+                <PillarMini label="Tech" value={`${fund.technical_rating}`} color={fund.technical_rating >= 65 ? "text-[#228844]" : fund.technical_rating >= 35 ? "text-[#ffb100]" : "text-[#b02020]"} />
+                <PillarMini label="Risk" value={`${fund.leverage.toFixed(0)}%`} color={fund.leverage < 25 ? "text-[#228844]" : fund.leverage < 35 ? "text-[#ffb100]" : "text-[#b02020]"} />
+                <PillarMini label="Trend" value={`${fund.trend}`} color={fund.trend >= 65 ? "text-[#228844]" : fund.trend >= 35 ? "text-[#ffb100]" : "text-[#b02020]"} />
+              </div>
+
+              {/* Z-Score breakdown */}
+              <div className="bg-[#003377]/20 rounded-lg p-2.5 mb-3 border border-[#003377]/30">
+                <span className="text-[10px] text-white/50 uppercase tracking-wider">Z-Score Breakdown</span>
+                <div className="flex gap-4 mt-1.5">
+                  <div>
+                    <span className="text-[10px] text-muted-foreground">1Y</span>
+                    <span className={`block text-sm font-bold font-mono ${fund.zscore_1y < 0 ? "text-[#228844]" : "text-[#b02020]"}`}>
+                      {fund.zscore_1y.toFixed(2)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-muted-foreground">3Y</span>
+                    <span className={`block text-sm font-bold font-mono ${fund.zscore_3y !== null && fund.zscore_3y < 0 ? "text-[#228844]" : fund.zscore_3y !== null ? "text-[#b02020]" : "text-muted-foreground"}`}>
+                      {fund.zscore_3y !== null ? fund.zscore_3y.toFixed(2) : "n/a"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-muted-foreground">5Y</span>
+                    <span className={`block text-sm font-bold font-mono ${fund.zscore_5y !== null && fund.zscore_5y < 0 ? "text-[#228844]" : fund.zscore_5y !== null ? "text-[#b02020]" : "text-muted-foreground"}`}>
+                      {fund.zscore_5y !== null ? fund.zscore_5y.toFixed(2) : "n/a"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-xs text-muted-foreground mt-3">
+                <span>Technical ({fund.technical_signal ?? "n/a"})</span>
+                <span className="font-mono text-foreground">{fund.technical_rating}</span>
+              </div>
+
+              {/* Volume */}
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>Volume</span>
+                <span className="font-mono text-foreground">{fund.volume.toLocaleString()}</span>
+              </div>
             </div>
 
+            {/* Close button */}
             <button
-              type="button"
               onClick={() => setIsExpanded(false)}
-              className="gy-tap min-h-12 w-full shrink-0 border-t border-[var(--page-border)] bg-[var(--page-surface)] text-[length:var(--gy-text-base)] font-semibold text-[var(--page-text)] hover:bg-[var(--page-surface-2)]"
+              className="w-full py-3 border-t border-[#003377]/40 text-sm font-medium text-white/50 hover:text-white hover:bg-[#003377]/30 transition-colors"
             >
               Close
             </button>
@@ -287,52 +205,11 @@ export function HeatmapCell({ fund, metric, rank, rankScore }: HeatmapCellProps)
   )
 }
 
-function MetricBox({
-  label,
-  value,
-  tone,
-}: {
-  label: string
-  value: string
-  tone?: "success" | "danger" | "gold"
-}) {
-  const valueClass =
-    tone === "success"
-      ? "text-[var(--gy-success)]"
-      : tone === "danger"
-        ? "text-[var(--gy-danger)]"
-        : tone === "gold"
-          ? "text-[var(--gy-gold)]"
-          : "text-[var(--page-text)]"
-
+function PillarMini({ label, value, color }: { label: string; value: string; color: string }) {
   return (
-    <div className="rounded-lg border border-[var(--page-border)] bg-[var(--page-surface)] p-3 text-center">
-      <span className="block text-[length:var(--gy-text-sm)] leading-tight text-[var(--page-muted)]">
-        {label}
-      </span>
-      <span
-        className={`mt-1 block text-[length:var(--gy-text-base)] font-bold leading-tight ${valueClass}`}
-      >
-        {value}
-      </span>
-    </div>
-  )
-}
-
-function ZYear({ label, value }: { label: string; value: number | null }) {
-  const tone =
-    value === null
-      ? "text-[var(--page-muted)]"
-      : value < 0
-        ? "text-[var(--gy-success)]"
-        : "text-[var(--gy-danger)]"
-
-  return (
-    <div>
-      <span className="block text-[length:var(--gy-text-sm)] text-[var(--page-muted)]">{label}</span>
-      <span className={`block text-[length:var(--gy-text-base)] font-bold ${tone}`}>
-        {value !== null ? value.toFixed(2) : "n/a"}
-      </span>
+    <div className="bg-[#003377]/25 rounded-md p-1.5 text-center border border-[#003377]/30">
+      <span className="block text-[8px] text-white/50 uppercase tracking-wider leading-tight">{label}</span>
+      <span className={`block text-[11px] font-bold font-mono leading-tight mt-0.5 ${color}`}>{value}</span>
     </div>
   )
 }
