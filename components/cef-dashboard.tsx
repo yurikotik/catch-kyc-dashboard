@@ -159,22 +159,22 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
           <span />
         </div>
 
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-5 py-3 md:px-8">
-          <div className="min-w-0">
-            <p className="truncate text-[length:var(--gy-text-sm)] font-bold tracking-[var(--gy-tracking)]">
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-5 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4 md:px-8">
+          <div className="min-w-0 flex-1">
+            <p className="text-[length:var(--gy-text-sm)] font-bold tracking-[var(--gy-tracking)]">
               <span className="text-[var(--gy-green)]">Game of Yield</span>
               <span className="text-[var(--gy-red)]"> · Income Engine</span>
             </p>
-            <h1 className="mt-0.5 truncate text-[length:var(--gy-text-xl)] font-bold leading-tight">
+            <h1 className="mt-0.5 text-[length:var(--gy-text-lg)] font-bold leading-snug sm:text-[length:var(--gy-text-xl)]">
               Top Dogs 20/20 Play Deck
             </h1>
             <p
-              className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[length:var(--gy-text-sm)] text-[var(--page-muted)]"
+              className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[length:var(--gy-text-sm)] leading-snug text-[var(--page-muted)]"
               aria-label="Data status"
             >
               <span className="inline-flex items-center gap-1.5 font-semibold text-[var(--page-text)]">
                 <span
-                  className={`h-2 w-2 rounded-full ${
+                  className={`h-2 w-2 shrink-0 rounded-full ${
                     isLive
                       ? syncStatus === "partial"
                         ? "bg-[var(--gy-gold)]"
@@ -189,12 +189,12 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
                     : "Data synced"
                   : "Sample data"}
               </span>
-              {lastFetchedLabel && <span>· {lastFetchedLabel}</span>}
+              {lastFetchedLabel && <span className="break-words">· {lastFetchedLabel}</span>}
               {dataDateLabel && <span className="hidden sm:inline">· As of {dataDateLabel}</span>}
             </p>
           </div>
 
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2 self-start">
             <div
               className="inline-flex overflow-hidden rounded-lg border border-[var(--page-border)]"
               role="group"
@@ -313,7 +313,10 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
           </div>
 
           {hasFunds && (
-            <div className="grid grid-cols-3 gap-3" aria-label="Averages">
+            <div
+              className="grid grid-cols-3 gap-2 rounded-xl border border-[var(--page-border)] bg-[var(--page-surface)] px-3 py-2.5 shadow-[var(--page-shadow)]"
+              aria-label="Averages"
+            >
               <StatCard
                 label="Average NAV Discount"
                 value={`${(funds.reduce((s, f) => s + f.discount, 0) / funds.length).toFixed(1)}%`}
