@@ -61,11 +61,11 @@ export function HeatmapLegend({ metric }: { metric: SortMetric }) {
   const items = legends[metric]
 
   return (
-    <div className="flex items-center gap-2 flex-wrap">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
       {items.map((item) => (
-        <div key={item.label} className="flex items-center gap-1">
-          <div className={`w-2.5 h-2.5 rounded-sm ${item.color}`} />
-          <span className="text-[10px] text-muted-foreground font-mono">{item.label}</span>
+        <div key={item.label} className="flex items-center gap-1.5">
+          <div className={`h-3 w-3 rounded-sm ${item.color}`} />
+          <span className="text-[length:var(--gy-text-sm)] text-[var(--page-muted)]">{item.label}</span>
         </div>
       ))}
     </div>
