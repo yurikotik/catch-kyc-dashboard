@@ -168,6 +168,30 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
             <h1 className="mt-0.5 truncate text-[length:var(--gy-text-xl)] font-bold leading-tight">
               Top Dogs 20/20 Play Deck
             </h1>
+            <p
+              className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[length:var(--gy-text-sm)] text-[var(--page-muted)]"
+              aria-label="Data status"
+            >
+              <span className="inline-flex items-center gap-1.5 font-semibold text-[var(--page-text)]">
+                <span
+                  className={`h-2 w-2 rounded-full ${
+                    isLive
+                      ? syncStatus === "partial"
+                        ? "bg-[var(--gy-gold)]"
+                        : "bg-[var(--gy-success)]"
+                      : "bg-[var(--page-muted)]"
+                  }`}
+                  aria-hidden
+                />
+                {isLive
+                  ? syncStatus === "partial"
+                    ? "Partial sync"
+                    : "Data synced"
+                  : "Sample data"}
+              </span>
+              {lastFetchedLabel && <span>· {lastFetchedLabel}</span>}
+              {dataDateLabel && <span className="hidden sm:inline">· As of {dataDateLabel}</span>}
+            </p>
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
@@ -210,31 +234,6 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
             </button>
           </div>
         </div>
-
-        <div className="border-t border-[var(--page-border)]/70 bg-[var(--page-bg)]">
-          <div
-            className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-4 gap-y-1 px-5 py-2 text-[length:var(--gy-text-sm)] md:px-8"
-            aria-label="Data status"
-          >
-            <span className="inline-flex items-center gap-2 font-semibold">
-              <span
-                className={`h-2.5 w-2.5 rounded-full ${
-                  isLive
-                    ? syncStatus === "partial"
-                      ? "bg-[var(--gy-gold)]"
-                      : "bg-[var(--gy-success)]"
-                    : "bg-[var(--page-muted)]"
-                }`}
-                aria-hidden
-              />
-              {isLive ? (syncStatus === "partial" ? "Partial sync" : "Data synced") : "Sample data"}
-            </span>
-            {lastFetchedLabel && (
-              <span className="text-[var(--page-muted)]">Fetched {lastFetchedLabel}</span>
-            )}
-            {dataDateLabel && <span className="text-[var(--page-muted)]">As of {dataDateLabel}</span>}
-          </div>
-        </div>
       </header>
 
       <main
@@ -242,22 +241,8 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
         className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-3 overflow-hidden px-5 py-3 md:px-8 lg:gap-4 lg:py-4 max-lg:overflow-x-hidden max-lg:overflow-y-auto"
       >
         <section className="shrink-0" aria-label="Choose a ranking">
-          <div className="mb-2 flex items-end justify-between gap-3">
-            <div>
-              <h2 className="text-[length:var(--gy-text-base)] font-bold tracking-[var(--gy-tracking)]">
-                Ranking
-              </h2>
-              <p className="mt-0.5 text-[length:var(--gy-text-sm)] text-[var(--page-muted)]">
-                {currentMetric?.description}
-              </p>
-            </div>
-            <p className="hidden shrink-0 text-[length:var(--gy-text-sm)] text-[var(--page-muted)] sm:block">
-              Top 20 — {currentMetric?.label}
-            </p>
-          </div>
-
           <div
-            className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:grid lg:grid-cols-6 lg:overflow-visible"
+            className="flex gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:grid lg:grid-cols-6 lg:overflow-visible"
             role="tablist"
           >
             {rankOptions.map((m) => {
@@ -285,6 +270,10 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
               )
             })}
           </div>
+          <p className="mt-1.5 text-[length:var(--gy-text-sm)] text-[var(--page-muted)]">
+            Top 20 by {currentMetric?.label}
+            <span className="hidden sm:inline"> — {currentMetric?.description}</span>
+          </p>
         </section>
 
         <section className="flex min-h-0 flex-1 flex-col max-lg:flex-none" aria-label="Heatmap">
@@ -303,44 +292,45 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
           </div>
         </section>
 
-        <section className="shrink-0 rounded-xl border border-[var(--page-border)] bg-[var(--page-surface)] px-4 py-3 shadow-[var(--page-shadow)] lg:px-5 lg:py-3.5">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
+        <section className="shrink-0 space-y-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <div className="min-w-0 flex-1">
-              <div className="mb-2 flex items-center justify-between gap-3">
-                <h3 className="text-[length:var(--gy-text-sm)] font-bold">Color guide</h3>
-                <button
-                  type="button"
-                  className="text-[length:var(--gy-text-sm)] font-semibold text-[var(--gy-blue)] underline decoration-[var(--gy-blue)] underline-offset-2"
-                >
-                  Top 50 index →
-                </button>
-              </div>
+              <p className="mb-1.5 text-[length:var(--gy-text-sm)] font-semibold text-[var(--page-muted)]">
+                Color guide
+              </p>
               <HeatmapLegend metric={activeMetric} />
             </div>
 
-            {hasFunds && (
-              <div
-                className="grid grid-cols-3 gap-2 border-t border-[var(--page-border)] pt-3 lg:w-[28rem] lg:shrink-0 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6"
-                aria-label="Averages"
-              >
-                <StatCard
-                  label="Average NAV Discount"
-                  value={`${(funds.reduce((s, f) => s + f.discount, 0) / funds.length).toFixed(1)}%`}
-                />
-                <StatCard
-                  label="Average Current Yield"
-                  value={`${(funds.reduce((s, f) => s + f.distribution_rate, 0) / funds.length).toFixed(1)}%`}
-                  emphasize
-                />
-                <StatCard
-                  label="Average Z-Score"
-                  value={(
-                    funds.reduce((s, f) => s + getEffectiveZScore(f), 0) / funds.length
-                  ).toFixed(2)}
-                />
-              </div>
-            )}
+            <button
+              type="button"
+              className="gy-top50-cta inline-flex min-h-11 shrink-0 items-center justify-center gap-2 self-start rounded-xl bg-[var(--gy-blue)] px-4 text-[length:var(--gy-text-sm)] font-bold text-white shadow-[var(--page-shadow)] sm:self-center"
+            >
+              Top 50 index
+              <span className="gy-top50-arrow" aria-hidden>
+                →
+              </span>
+            </button>
           </div>
+
+          {hasFunds && (
+            <div className="grid grid-cols-3 gap-3" aria-label="Averages">
+              <StatCard
+                label="Average NAV Discount"
+                value={`${(funds.reduce((s, f) => s + f.discount, 0) / funds.length).toFixed(1)}%`}
+              />
+              <StatCard
+                label="Average Current Yield"
+                value={`${(funds.reduce((s, f) => s + f.distribution_rate, 0) / funds.length).toFixed(1)}%`}
+                emphasize
+              />
+              <StatCard
+                label="Average Z-Score"
+                value={(
+                  funds.reduce((s, f) => s + getEffectiveZScore(f), 0) / funds.length
+                ).toFixed(2)}
+              />
+            </div>
+          )}
         </section>
       </main>
 
