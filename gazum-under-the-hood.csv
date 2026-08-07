@@ -1,0 +1,65 @@
+Category,Name,Role / usage,Website
+Hosting / Infra,Vercel,Marketing site host/CDN (www.gazum.org),https://vercel.com
+Hosting / Infra,Fly.io,"App + affiliates host (app.gazum.org, affiliates.gazum.org)",https://fly.io
+Hosting / Infra,Cloudflare,"DNS, email MX/SPF/DMARC, proxy in front of Fly, Turnstile, Web Analytics",https://www.cloudflare.com
+Hosting / Infra,Tigris (via Fly),"Object storage (screenshots, avatars, videos)",https://www.tigrisdata.com
+Hosting / Infra,Supabase,Managed PostgreSQL + Row Level Security (RLS),https://supabase.com
+Payments,Stripe,"Payments, subscriptions, invoices",https://stripe.com
+Payments,PayPal,Affiliate payouts (site-claimed),https://www.paypal.com
+AI / Voice,Anthropic (Claude API),"AI Coach, Copilot, Ensemble, Pre-Trade Coach, News Impact, Auction Playbook, Screenshot-to-Setup",https://www.anthropic.com
+AI / Voice,OpenAI,Text embeddings (journal semantic search),https://openai.com
+AI / Voice,ElevenLabs,TTS + STT (Voice Credits),https://elevenlabs.io
+Market Data,QuoteMedia,Equities / ETF market data,https://www.quotemedia.com
+Market Data,Rithmic,Futures real-time data,https://www.rithmic.com
+Market Data,TradingView,Licensed charting library,https://www.tradingview.com
+Market Data,Binance,Crypto market data / connect,https://www.binance.com
+Market Data,Coinbase,Crypto connect (site-claimed),https://www.coinbase.com
+Broker / Trading,TradeStation,OAuth / API + CSV import,https://www.tradestation.com
+Broker / Trading,Interactive Brokers,IBKR Client Portal Web API + CSV import,https://www.interactivebrokers.com
+Broker / Trading,tastytrade,OAuth / API integration,https://tastytrade.com
+Broker / Trading,Webull,OAuth / API + CSV import,https://www.webull.com
+Broker / Trading,TradeZero,OAuth / API integration,https://www.tradezero.com
+Broker / Trading,Alpaca,OAuth / API integration,https://alpaca.markets
+Broker / Trading,Lightspeed,OAuth / API integration,https://www.lightspeed.com
+Broker / Trading,moomoo,OAuth / API integration,https://www.moomoo.com
+Broker / Trading,Tradier,OAuth / API integration,https://www.tradier.com
+Broker / Trading,Public,OAuth / API integration,https://public.com
+Broker / Trading,APEX (via Rithmic),Futures broker path,https://www.apexclearing.com
+Broker / Trading,Robinhood,CSV import (claimed),https://robinhood.com
+Broker / Trading,E*TRADE,CSV import (claimed),https://us.etrade.com
+Comms / Realtime,Resend,Transactional email,https://resend.com
+Comms / Realtime,Twilio,SMS notifications,https://www.twilio.com
+Comms / Realtime,Stream Chat,In-app chat / DMs,https://getstream.io/chat/
+Comms / Realtime,LiveKit,Live Room A/V,https://livekit.io
+Analytics / Growth,Google Analytics 4,Web analytics (G-XNBQB767RP),https://analytics.google.com
+Analytics / Growth,Google Tag Manager / gtag,Tag loading / marketing tags,https://tagmanager.google.com
+Analytics / Growth,Apollo.io,Website intent tracker,https://www.apollo.io
+Analytics / Growth,Google Search Console,Site verification,https://search.google.com/search-console
+Analytics / Growth,Custom affiliate tracker,affiliates.gazum.org track.js + /api/v1/track/*,https://affiliates.gazum.org
+Auth / Security,Cloudflare Turnstile,Bot protection on login,https://www.cloudflare.com/products/turnstile/
+Auth / Security,Google OAuth,Continue with Google on app login,https://developers.google.com/identity
+Auth / Security,bcrypt,Password hashing,https://en.wikipedia.org/wiki/Bcrypt
+Auth / Security,AES-256,Encryption at rest for sensitive fields,https://en.wikipedia.org/wiki/Advanced_Encryption_Standard
+Auth / Security,TOTP 2FA,Two-factor auth + backup codes,https://en.wikipedia.org/wiki/Time-based_one-time_password
+Auth / Security,TLS,Encryption in transit,https://en.wikipedia.org/wiki/Transport_Layer_Security
+Tech · Marketing (www),Next.js App Router,Framework (RSC / SSG-ISR prerender),https://nextjs.org
+Tech · Marketing (www),React,UI library,https://react.dev
+Tech · Marketing (www),Webpack,Bundler (webpackChunk_N_E),https://webpack.js.org
+Tech · Marketing (www),Tailwind CSS,Styling,https://tailwindcss.com
+Tech · Marketing (www),Inter (next/font),Typography,https://rsms.me/inter/
+Tech · Marketing (www),next-themes,Light/dark theming,https://github.com/pacocoursey/next-themes
+Tech · Marketing (www),Framer Motion,Animation / motion,https://www.framer.com/motion/
+Tech · Marketing (www),Next.js Image,Image optimization (/_next/image),https://nextjs.org/docs/app/building-your-application/optimizing/images
+Tech · App (app),Next.js,App framework (x-powered-by: Next.js),https://nextjs.org
+Tech · App (app),Turbopack,Bundler (turbopack-*.js),https://turbo.build/pack
+Tech · App (app),Cloudflare → Fly.io → Next.js,Request path / edge proxy → app host,https://fly.io
+Tech · App (app),Supabase Postgres,Primary DB with RLS,https://supabase.com/docs/guides/database/overview
+Tech · App (app),TradingView Charting Library,In-app charts,https://www.tradingview.com/charting-library-docs/
+Tech · Affiliates,Next.js on Fly.io,Affiliates stack behind Cloudflare,https://fly.io
+Tech · Affiliates,Custom JS pixel,Click/identify tracking APIs,https://affiliates.gazum.org
+Architecture Surface,www.gazum.org,Marketing site → Vercel,https://www.gazum.org
+Architecture Surface,app.gazum.org,Product app → Cloudflare + Fly.io,https://app.gazum.org
+Architecture Surface,affiliates.gazum.org,Affiliate tracker API → Fly.io,https://affiliates.gazum.org
+Social,X / Twitter,@GazumCorp / @GAZUMTech,https://x.com/GazumCorp
+Social,LinkedIn,Company page,https://www.linkedin.com/company/gazumcorp
+Social,YouTube,@GAZUMCorp,https://www.youtube.com/@GAZUMCorp

@@ -43,10 +43,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${figtree.variable} bg-background`} suppressHydrationWarning>
       <head>
-        {/* Apply saved theme + text scale before paint to avoid flash */}
+        {/* Apply saved text scale before paint to avoid flash */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('gy-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}var s=localStorage.getItem('gy-text-size');var scale=s==='xl'?1.16:s==='lg'?1.08:1;document.documentElement.style.setProperty('--gy-scale',String(scale))}catch(e){}})();`,
+            __html: `(function(){try{document.documentElement.classList.remove('dark');var s=localStorage.getItem('gy-text-size');var scale=s==='xl'?1.16:s==='lg'?1.08:1;document.documentElement.style.setProperty('--gy-scale',String(scale))}catch(e){}})();`,
           }}
         />
       </head>

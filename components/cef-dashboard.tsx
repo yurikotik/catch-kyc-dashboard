@@ -71,7 +71,6 @@ const rankOptions: {
 ]
 
 type TextSize = "md" | "lg" | "xl"
-type ThemeMode = "light" | "dark"
 
 const TEXT_SCALE: Record<TextSize, number> = {
   md: 1,
@@ -104,13 +103,6 @@ function formatAsOf(dateStr: string): string {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
 }
 
-function getStoredTheme(): ThemeMode {
-  if (typeof window === "undefined") return "light"
-  const stored = window.localStorage.getItem("gy-theme")
-  if (stored === "dark" || stored === "light") return stored
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
-}
-
 function getStoredTextSize(): TextSize {
   if (typeof window === "undefined") return "md"
   const stored = window.localStorage.getItem("gy-text-size")
@@ -121,11 +113,9 @@ function getStoredTextSize(): TextSize {
 export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDashboardProps) {
   const [activeMetric, setActiveMetric] = useState<SortMetric>("rank")
   const [textSize, setTextSize] = useState<TextSize>("md")
-  const [theme, setTheme] = useState<ThemeMode>("light")
   const [prefsReady, setPrefsReady] = useState(false)
 
   useEffect(() => {
-    setTheme(getStoredTheme())
     setTextSize(getStoredTextSize())
     setPrefsReady(true)
   }, [])
@@ -133,13 +123,7 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
   useEffect(() => {
     if (!prefsReady) return
     const root = document.documentElement
-    root.classList.toggle("dark", theme === "dark")
-    window.localStorage.setItem("gy-theme", theme)
-  }, [theme, prefsReady])
-
-  useEffect(() => {
-    if (!prefsReady) return
-    const root = document.documentElement
+    root.classList.remove("dark")
     root.style.setProperty("--gy-scale", String(TEXT_SCALE[textSize]))
     window.localStorage.setItem("gy-text-size", textSize)
   }, [textSize, prefsReady])
@@ -151,8 +135,8 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
   const hasFunds = funds.length > 0
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-[var(--page-bg)] text-[var(--page-text)] max-lg:h-auto max-lg:min-h-dvh max-lg:overflow-visible">
-      <header className="shrink-0 border-b border-[var(--page-border)] bg-[var(--page-header)]">
+    <div className="flex h-dvh flex-col overflow-hidden bg-[var(--page-bg)] text-[var(--page-on-bg)] max-lg:h-auto max-lg:min-h-dvh max-lg:overflow-visible">
+      <header className="shrink-0 border-b border-white/15 bg-[var(--page-header)]">
         <div className="gy-brand-stripe" aria-hidden="true">
           <span />
           <span />
@@ -162,24 +146,24 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-5 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4 md:px-8">
           <div className="min-w-0 flex-1">
             <p className="text-[length:var(--gy-text-sm)] font-bold tracking-[var(--gy-tracking)]">
-              <span className="text-[var(--gy-green)]">Game of Yield</span>
-              <span className="text-[var(--gy-red)]"> · Income Engine</span>
+              <span className="text-[#7dcf4a]">Game of Yield</span>
+              <span className="text-[#f07178]"> · Income Engine</span>
             </p>
-            <h1 className="mt-0.5 text-[length:var(--gy-text-lg)] font-bold leading-snug sm:text-[length:var(--gy-text-xl)]">
+            <h1 className="mt-0.5 text-[length:var(--gy-text-lg)] font-bold leading-snug text-[var(--page-on-bg)] sm:text-[length:var(--gy-text-xl)]">
               Top Dogs 20/20 Play Deck
             </h1>
             <p
-              className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[length:var(--gy-text-sm)] leading-snug text-[var(--page-muted)]"
+              className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[length:var(--gy-text-sm)] leading-snug text-[var(--page-on-bg-muted)]"
               aria-label="Data status"
             >
-              <span className="inline-flex items-center gap-1.5 font-semibold text-[var(--page-text)]">
+              <span className="inline-flex items-center gap-1.5 font-semibold text-[var(--page-on-bg)]">
                 <span
                   className={`h-2 w-2 shrink-0 rounded-full ${
                     isLive
                       ? syncStatus === "partial"
-                        ? "bg-[var(--gy-gold)]"
-                        : "bg-[var(--gy-success)]"
-                      : "bg-[var(--page-muted)]"
+                        ? "bg-[var(--gy-yellow)]"
+                        : "bg-[var(--gy-green)]"
+                      : "bg-[var(--page-on-bg-muted)]"
                   }`}
                   aria-hidden
                 />
@@ -196,7 +180,7 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
 
           <div className="flex shrink-0 items-center gap-2 self-start">
             <div
-              className="inline-flex overflow-hidden rounded-lg border border-[var(--page-border)]"
+              className="inline-flex overflow-hidden rounded-lg border border-[var(--page-border)] shadow-[var(--page-shadow)]"
               role="group"
               aria-label="Text size"
             >
@@ -223,15 +207,6 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
                 </button>
               ))}
             </div>
-
-            <button
-              type="button"
-              onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
-              className="min-h-10 rounded-lg border border-[var(--page-border)] bg-[var(--page-surface)] px-4 text-[length:var(--gy-text-sm)] font-semibold text-[var(--page-text)] hover:bg-[var(--page-surface-2)]"
-              aria-label={theme === "light" ? "Switch to dark theme" : "Switch to light theme"}
-            >
-              {theme === "light" ? "Dark" : "Light"}
-            </button>
           </div>
         </div>
       </header>
@@ -256,7 +231,7 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
                   aria-selected={selected}
                   aria-pressed={selected}
                   onClick={() => setActiveMetric(m.value)}
-                  className={`min-h-11 shrink-0 rounded-xl border px-4 text-[length:var(--gy-text-sm)] font-semibold transition-colors lg:w-full lg:px-3 ${
+                  className={`min-h-11 shrink-0 rounded-xl border px-4 text-[length:var(--gy-text-sm)] font-semibold shadow-[var(--page-shadow)] transition-colors lg:w-full lg:px-3 ${
                     selected
                       ? "border-[var(--gy-blue)] bg-[var(--gy-blue-soft)] text-[var(--page-text)] shadow-[inset_0_0_0_2px_var(--gy-blue)]"
                       : "border-[var(--page-border)] bg-[var(--page-surface)] text-[var(--page-text)] hover:bg-[var(--page-surface-2)]"
@@ -270,7 +245,7 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
               )
             })}
           </div>
-          <p className="mt-1.5 text-[length:var(--gy-text-sm)] text-[var(--page-muted)]">
+          <p className="mt-1.5 text-[length:var(--gy-text-sm)] text-[var(--page-on-bg-muted)]">
             Top 20 by {currentMetric?.label}
             <span className="hidden sm:inline"> — {currentMetric?.description}</span>
           </p>
@@ -282,7 +257,7 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
             {hasFunds ? (
               <HeatmapGrid data={funds} metric={activeMetric} count={20} />
             ) : (
-              <div className="rounded-xl border border-[var(--page-border)] bg-[var(--page-surface)] px-5 py-8 text-center shadow-[var(--page-shadow)]">
+              <div className="rounded-xl border border-[var(--page-border)] bg-[var(--page-surface)] px-5 py-8 text-center text-[var(--page-text)] shadow-[var(--page-shadow)]">
                 <p className="text-[length:var(--gy-text-lg)] font-bold">No fund data yet</p>
                 <p className="mt-2 text-[length:var(--gy-text-base)] text-[var(--page-muted)]">
                   Run the daily sync to load the Top 20 play deck.
@@ -295,26 +270,26 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
         <section className="shrink-0 space-y-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <div className="min-w-0 flex-1">
-              <p className="mb-1.5 text-[length:var(--gy-text-sm)] font-semibold text-[var(--page-muted)]">
+              <p className="mb-1.5 text-[length:var(--gy-text-sm)] font-semibold text-[var(--page-on-bg-muted)]">
                 Color guide
               </p>
               <HeatmapLegend metric={activeMetric} />
             </div>
 
-            <button
-              type="button"
-              className="gy-top50-cta inline-flex min-h-11 shrink-0 items-center justify-center gap-2 self-start rounded-xl bg-[var(--gy-blue)] px-4 text-[length:var(--gy-text-sm)] font-bold text-white shadow-[var(--page-shadow)] sm:self-center"
+            <a
+              href="https://gameofyield.vercel.app/"
+              className="gy-top50-cta inline-flex min-h-11 shrink-0 items-center justify-center gap-2 self-start rounded-xl bg-[var(--page-cta)] px-4 text-[length:var(--gy-text-sm)] font-bold text-[var(--page-cta-text)] no-underline shadow-[var(--page-shadow)] sm:self-center"
             >
               Top 50 index
               <span className="gy-top50-arrow" aria-hidden>
                 →
               </span>
-            </button>
+            </a>
           </div>
 
           {hasFunds && (
             <div
-              className="grid grid-cols-3 gap-2 rounded-xl border border-[var(--page-border)] bg-[var(--page-surface)] px-3 py-2.5 shadow-[var(--page-shadow)]"
+              className="grid grid-cols-3 gap-2 rounded-xl border border-[var(--page-border)] bg-[var(--page-surface)] px-3 py-2.5 text-[var(--page-text)] shadow-[var(--page-shadow)]"
               aria-label="Averages"
             >
               <StatCard
@@ -337,15 +312,15 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
         </section>
       </main>
 
-      <footer className="shrink-0 border-t border-[var(--page-border)] bg-[var(--page-header)]">
+      <footer className="shrink-0 border-t border-white/15 bg-[var(--page-header)]">
         <div className="mx-auto flex max-w-6xl flex-col gap-1 px-5 py-2.5 text-center md:px-8 lg:flex-row lg:items-center lg:justify-between lg:text-left">
-          <p className="text-[length:var(--gy-text-sm)] text-[var(--page-muted)]">
+          <p className="text-[length:var(--gy-text-sm)] text-[var(--page-on-bg-muted)]">
             Data from{" "}
-            <span className="font-semibold text-[var(--page-text)] underline decoration-[var(--gy-blue)]">
+            <span className="font-semibold text-[var(--page-on-bg)] underline decoration-[var(--gy-yellow)]">
               CEF Connect
             </span>{" "}
             &{" "}
-            <span className="font-semibold text-[var(--page-text)] underline decoration-[var(--gy-blue)]">
+            <span className="font-semibold text-[var(--page-on-bg)] underline decoration-[var(--gy-yellow)]">
               Barchart
             </span>
             <span className="hidden sm:inline">
@@ -353,7 +328,7 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
               · RANK* = 40% Z + 20% Yield + 20% Tech + 20% Discount
             </span>
           </p>
-          <p className="text-[length:var(--gy-text-sm)] text-[var(--page-muted)]">
+          <p className="text-[length:var(--gy-text-sm)] text-[var(--page-on-bg-muted)]">
             Need help? Ask your Game of Yield coach.
           </p>
         </div>
@@ -378,7 +353,7 @@ function StatCard({
       </span>
       <span
         className={`mt-1 block text-[length:var(--gy-text-lg)] font-bold leading-tight ${
-          emphasize ? "text-[var(--gy-gold)]" : "text-[var(--page-text)]"
+          emphasize ? "text-[var(--gy-green)]" : "text-[var(--page-text)]"
         }`}
       >
         {value}

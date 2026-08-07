@@ -1,12 +1,11 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
-@custom-variant dark (&:is(.dark *));
-
 /*
   Game of Yield / Pensionizer brand
-  Base = calm ivory / dark grey (Medicare-like)
-  Flavor = logo green · yellow · red · blue (accents only)
+  Base = app navy #0a4c82 (matches native bottom nav in webview)
+  Surfaces = soft white cards (breaks up the blue, like in-app screens)
+  Flavor = logo green · yellow · red (accents only)
   Type = Figtree (Senior Planet companion)
 */
 :root {
@@ -18,14 +17,14 @@
   --gy-green-soft: #e8f3dc;
   --gy-yellow-soft: #fff6c2;
   --gy-red-soft: #f8e4e5;
-  --gy-blue-soft: #e3f1f8;
+  --gy-blue-soft: #e8f4fb;
 
-  /* Calm base */
+  /* App navy canvas + light cards */
   --gy-ink: #1b242c;
   --gy-muted: #4a5560;
-  --gy-bg: #f6f3ee;
+  --gy-bg: #0a4c82;
   --gy-surface: #ffffff;
-  --gy-border: #d9d2c8;
+  --gy-border: #d5e3ef;
 
   /* Semantics */
   --gy-success: var(--gy-green);
@@ -72,32 +71,35 @@
   /* Page aliases (components) */
   --page-bg: var(--gy-bg);
   --page-surface: var(--gy-surface);
-  --page-surface-2: #efebe4;
+  --page-surface-2: #f3f7fb;
   --page-text: var(--gy-ink);
   --page-muted: var(--gy-muted);
+  /* Text sitting directly on the navy canvas */
+  --page-on-bg: #ffffff;
+  --page-on-bg-muted: #c5d8ea;
   --page-border: var(--gy-border);
-  --page-header: var(--gy-surface);
+  --page-header: transparent;
   --page-accent: var(--gy-gold);
   --page-accent-soft: var(--gy-yellow-soft);
-  --page-cta: var(--gy-blue);
-  --page-cta-text: #ffffff;
+  --page-cta: var(--gy-yellow);
+  --page-cta-text: #0a4c82;
   --page-brand: var(--gy-green);
-  --page-shadow: 0 1px 2px rgb(27 36 44 / 6%), 0 4px 12px rgb(27 36 44 / 4%);
-  --page-overlay: rgb(27 36 44 / 45%);
-  --page-focus: var(--gy-blue);
+  --page-shadow: 0 1px 2px rgb(10 76 130 / 10%), 0 8px 20px rgb(10 76 130 / 14%);
+  --page-overlay: rgb(6 36 62 / 55%);
+  --page-focus: var(--gy-yellow);
 
   /* shadcn / Tailwind semantic tokens */
   --background: var(--gy-bg);
-  --foreground: var(--gy-ink);
+  --foreground: var(--page-on-bg);
   --card: var(--gy-surface);
   --card-foreground: var(--gy-ink);
   --popover: var(--gy-surface);
   --popover-foreground: var(--gy-ink);
-  --primary: var(--gy-blue);
-  --primary-foreground: #ffffff;
+  --primary: var(--gy-yellow);
+  --primary-foreground: #0a4c82;
   --secondary: var(--gy-blue-soft);
   --secondary-foreground: var(--gy-ink);
-  --muted: #efebe4;
+  --muted: var(--page-surface-2);
   --muted-foreground: var(--gy-muted);
   --accent: var(--gy-green-soft);
   --accent-foreground: var(--gy-ink);
@@ -105,7 +107,7 @@
   --destructive-foreground: #ffffff;
   --border: var(--gy-border);
   --input: var(--gy-border);
-  --ring: var(--gy-blue);
+  --ring: var(--gy-yellow);
   --chart-1: var(--gy-blue);
   --chart-2: var(--gy-green);
   --chart-3: var(--gy-gold);
@@ -114,56 +116,6 @@
   --success: var(--gy-green);
   --warning: var(--gy-gold);
   --radius: 0.5rem;
-}
-
-/* Dark GREY only — never blue wash */
-.dark {
-  --gy-bg: #1a1c1e;
-  --gy-surface: #2a2c2e;
-  --gy-ink: #f3efe8;
-  --gy-muted: #a8aeb4;
-  --gy-border: #3f4347;
-  --gy-green-soft: #24351a;
-  --gy-yellow-soft: #3a3410;
-  --gy-red-soft: #3a1e20;
-  --gy-blue-soft: #173040;
-
-  --page-bg: var(--gy-bg);
-  --page-surface: var(--gy-surface);
-  --page-surface-2: #232628;
-  --page-text: var(--gy-ink);
-  --page-muted: var(--gy-muted);
-  --page-border: var(--gy-border);
-  --page-header: #222426;
-  --page-accent: var(--gy-gold);
-  --page-accent-soft: var(--gy-yellow-soft);
-  --page-cta: #3ba3d0;
-  --page-cta-text: #1a1c1e;
-  --page-brand: #6bb83a;
-  --page-shadow: 0 1px 2px rgb(0 0 0 / 35%), 0 6px 16px rgb(0 0 0 / 28%);
-  --page-overlay: rgb(0 0 0 / 65%);
-  --page-focus: #3ba3d0;
-
-  --background: var(--gy-bg);
-  --foreground: var(--gy-ink);
-  --card: var(--gy-surface);
-  --card-foreground: var(--gy-ink);
-  --popover: var(--gy-surface);
-  --popover-foreground: var(--gy-ink);
-  --primary: #3ba3d0;
-  --primary-foreground: #1a1c1e;
-  --secondary: var(--gy-blue-soft);
-  --secondary-foreground: var(--gy-ink);
-  --muted: #232628;
-  --muted-foreground: var(--gy-muted);
-  --accent: var(--gy-green-soft);
-  --accent-foreground: var(--gy-ink);
-  --destructive: #e0575d;
-  --border: var(--gy-border);
-  --input: var(--gy-border);
-  --ring: #3ba3d0;
-  --success: #6bb83a;
-  --warning: var(--gy-gold);
 }
 
 @theme inline {
@@ -217,10 +169,6 @@
 
   html {
     font-size: calc(100% * var(--gy-scale));
-    color-scheme: light;
-  }
-
-  html.dark {
     color-scheme: dark;
   }
 
@@ -232,7 +180,7 @@
     letter-spacing: var(--gy-tracking);
     font-weight: 400;
     background-color: var(--page-bg);
-    color: var(--page-text);
+    color: var(--page-on-bg);
   }
 
   h1,
@@ -241,7 +189,7 @@
   h4 {
     font-weight: 700;
     letter-spacing: var(--gy-tracking);
-    color: var(--page-text);
+    color: var(--page-on-bg);
     line-height: 1.35;
   }
 
@@ -315,9 +263,9 @@
   .gy-task-card[data-active="true"],
   .gy-task-card[aria-pressed="true"],
   .gy-task-card[aria-selected="true"] {
-    border-color: var(--gy-blue);
+    border-color: var(--gy-yellow);
     background: var(--gy-blue-soft);
-    box-shadow: inset 0 0 0 2px var(--gy-blue);
+    box-shadow: inset 0 0 0 2px var(--gy-yellow);
   }
 
   /* Brand stripe — once near header */
@@ -338,7 +286,7 @@
     background: var(--gy-red);
   }
 
-  /* Heat chips — yellow uses dark ink */
+  /* Heat chips — yellow uses dark ink for contrast */
   .gy-chip-green {
     background: var(--gy-green-soft);
     color: var(--gy-green);
@@ -365,11 +313,11 @@
   @keyframes gy-top50-pulse {
     0%,
     100% {
-      box-shadow: 0 1px 2px rgb(17 125 174 / 18%), 0 0 0 0 rgb(17 125 174 / 0%);
+      box-shadow: 0 1px 2px rgb(252 218 15 / 18%), 0 0 0 0 rgb(252 218 15 / 0%);
       transform: translateY(0);
     }
     50% {
-      box-shadow: 0 4px 14px rgb(17 125 174 / 28%), 0 0 0 6px rgb(17 125 174 / 12%);
+      box-shadow: 0 4px 14px rgb(252 218 15 / 28%), 0 0 0 6px rgb(252 218 15 / 12%);
       transform: translateY(-1px);
     }
   }
@@ -406,8 +354,8 @@
     width: auto;
     height: auto;
     padding: 0.75rem 1.25rem;
-    background: var(--gy-blue);
-    color: #fff;
+    background: var(--gy-yellow);
+    color: #0a4c82;
     border-radius: 0.5rem;
     font-weight: 600;
     font-size: var(--gy-text-base);
