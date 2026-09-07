@@ -12,26 +12,35 @@ const REQUEST_TIMEOUT_MS = 20000
 
 export const TRACKED_SYMBOLS: string[] = WATCHLIST_SYMBOLS
 
+/**
+ * CEF Connect is inconsistent about numeric encoding - some edges answer with
+ * bare numbers, others with numeric strings ("9.36", "9.36%"). Every numeric
+ * field is therefore typed loosely and run through `toNumber` at the boundary.
+ * A strict `typeof v === "number"` check is what silently turned the whole
+ * watchlist's distribution rate into 0%.
+ */
+type Numeric = number | string | null | undefined
+
 interface DailyPricingRow {
   Ticker: string
   Name: string
-  Price: number | null
-  NAV: number | null
-  Discount: number | null
-  DistributionRatePrice: number | null
-  DistributionRateNAV: number | null
-  CurrentDistribution: number | null
+  Price: Numeric
+  NAV: Numeric
+  Discount: Numeric
+  DistributionRatePrice: Numeric
+  DistributionRateNAV: Numeric
+  CurrentDistribution: Numeric
   DistributionFrequency: string | null
-  LeverageRatioPercentage: number | null
-  AvgDailyVolume: number | null
-  ZScore1Yr: number | null
+  LeverageRatioPercentage: Numeric
+  AvgDailyVolume: Numeric
+  ZScore1Yr: Numeric
   LastUpdated: string | null
 }
 
 interface HistoryPoint {
-  Data: number | null
-  NAVData: number | null
-  DiscountData: number | null
+  Data: Numeric
+  NAVData: Numeric
+  DiscountData: Numeric
   DataDate: string
 }
 
@@ -39,8 +48,16 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-function isFiniteNumber(v: unknown): v is number {
-  return typeof v === "number" && Number.isFinite(v)
+/** Coerce a number-or-numeric-string field; null when it is not a usable number. */
+function toNumber(v: unknown): number | null {
+  if (typeof v === "number") return Number.isFinite(v) ? v : null
+  if (typeof v === "string") {
+    const cleaned = v.replace(/[$%,\s]/g, "")
+    if (!cleaned) return null
+    const n = Number(cleaned)
+    return Number.isFinite(n) ? n : null
+  }
+  return null
 }
 
 async function fetchJsonWithRetry(url: string): Promise<unknown> {
@@ -100,11 +117,9 @@ async function fetchPricingHistory(
 function computeZScore(history: HistoryPoint[], windowDays: number): number | null {
   const cutoff = Date.now() - windowDays * 24 * 60 * 60 * 1000
   const series = history
-    .filter(
-      (p) =>
-        new Date(p.DataDate).getTime() >= cutoff && isFiniteNumber(p.DiscountData),
-    )
-    .map((p) => p.DiscountData as number)
+    .filter((p) => new Date(p.DataDate).getTime() >= cutoff)
+    .map((p) => toNumber(p.DiscountData))
+    .filter((v): v is number => v !== null)
   const expectedPoints = (windowDays / 7) * 0.6
   if (series.length < Math.max(10, expectedPoints)) return null
   const current = series[series.length - 1]
@@ -116,7 +131,9 @@ function computeZScore(history: HistoryPoint[], windowDays: number): number | nu
 }
 
 function computeTrend(history: HistoryPoint[]): number | null {
-  const prices = history.filter((p) => isFiniteNumber(p.Data))
+  const prices = history
+    .map((p) => ({ ...p, Data: toNumber(p.Data) }))
+    .filter((p) => p.Data !== null)
   if (prices.length < 8) return null
   const latest = prices[prices.length - 1]
   const priceAt = (daysAgo: number): number | null => {
@@ -162,24 +179,20 @@ const DISTRIBUTIONS_PER_YEAR: Record<string, number> = {
  * unknown rather than silently written out as a 0% yield.
  */
 function resolveDistributionRate(row: DailyPricingRow): number | null {
-  if (isFiniteNumber(row.DistributionRatePrice) && row.DistributionRatePrice > 0) {
-    return Number(row.DistributionRatePrice.toFixed(2))
-  }
-  if (isFiniteNumber(row.DistributionRateNAV) && row.DistributionRateNAV > 0) {
-    return Number(row.DistributionRateNAV.toFixed(2))
-  }
+  const onPrice = toNumber(row.DistributionRatePrice)
+  if (onPrice !== null && onPrice > 0) return Number(onPrice.toFixed(2))
+
+  const onNav = toNumber(row.DistributionRateNAV)
+  if (onNav !== null && onNav > 0) return Number(onNav.toFixed(2))
+
   const periods =
     typeof row.DistributionFrequency === "string"
       ? DISTRIBUTIONS_PER_YEAR[row.DistributionFrequency.trim().toLowerCase()]
       : undefined
-  if (
-    periods &&
-    isFiniteNumber(row.CurrentDistribution) &&
-    row.CurrentDistribution > 0 &&
-    isFiniteNumber(row.Price) &&
-    row.Price > 0
-  ) {
-    return Number((((row.CurrentDistribution * periods) / row.Price) * 100).toFixed(2))
+  const distribution = toNumber(row.CurrentDistribution)
+  const price = toNumber(row.Price)
+  if (periods && distribution !== null && distribution > 0 && price !== null && price > 0) {
+    return Number((((distribution * periods) / price) * 100).toFixed(2))
   }
   return null
 }
@@ -208,13 +221,13 @@ export async function scrapeSingleFund(
   const row = universe.get(symbol.toUpperCase())
   if (!row) return { fund: null, missing: true }
 
-  if (!isFiniteNumber(row.Price) || !isFiniteNumber(row.NAV) || row.NAV <= 0) {
+  const price = toNumber(row.Price)
+  const nav = toNumber(row.NAV)
+  if (price === null || nav === null || nav <= 0) {
     return { fund: null, error: `${symbol}: missing or invalid price/NAV` }
   }
 
-  const discount = isFiniteNumber(row.Discount)
-    ? row.Discount
-    : Number((((row.Price - row.NAV) / row.NAV) * 100).toFixed(2))
+  const discount = toNumber(row.Discount) ?? Number((((price - nav) / nav) * 100).toFixed(2))
 
   const distribution_rate = resolveDistributionRate(row)
   if (distribution_rate === null) {
@@ -239,8 +252,8 @@ export async function scrapeSingleFund(
     trend = computeTrend(weekly)
 
     const closes = daily
-      .map((p) => p.Data)
-      .filter((v): v is number => isFiniteNumber(v) && v > 0)
+      .map((p) => toNumber(p.Data))
+      .filter((v): v is number => v !== null && v > 0)
     const technical = computeTechnicalRating(closes)
     if (technical) {
       technical_rating = technical.rating
@@ -253,7 +266,7 @@ export async function scrapeSingleFund(
     }
   }
 
-  const zscore1y = isFiniteNumber(row.ZScore1Yr) ? row.ZScore1Yr : zscore1yFromHistory
+  const zscore1y = toNumber(row.ZScore1Yr) ?? zscore1yFromHistory
   const effective = pickEffectiveZScore(zscore1y, zscore3y, zscore5y)
   if (!effective || zscore1y === null) {
     return { fund: null, error: `${symbol}: no z-score available` }
@@ -263,8 +276,8 @@ export async function scrapeSingleFund(
     fund: {
       symbol: symbol.toUpperCase(),
       name: typeof row.Name === "string" && row.Name.trim() ? row.Name.trim() : symbol,
-      price: row.Price,
-      nav: row.NAV,
+      price,
+      nav,
       discount,
       zscore_1y: zscore1y,
       zscore_3y: zscore3y,
@@ -272,13 +285,11 @@ export async function scrapeSingleFund(
       zscore_effective: effective.value,
       zscore_window: effective.window,
       distribution_rate,
-      leverage: isFiniteNumber(row.LeverageRatioPercentage)
-        ? row.LeverageRatioPercentage
-        : null,
+      leverage: toNumber(row.LeverageRatioPercentage),
       trend: trend ?? 50,
       technical_rating,
       technical_signal,
-      volume: isFiniteNumber(row.AvgDailyVolume) ? Math.round(row.AvgDailyVolume) : 0,
+      volume: Math.round(toNumber(row.AvgDailyVolume) ?? 0),
     },
   }
 }
