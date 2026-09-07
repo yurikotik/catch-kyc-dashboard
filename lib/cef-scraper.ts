@@ -1,5 +1,5 @@
 import type { CEFData, ZScoreWindow } from "./cef-data"
-import { computeTechnicalRating } from "./technical"
+import { computeTechnicalRating, distributionAdjustedCloses } from "./technical"
 import { WATCHLIST_SYMBOLS } from "./watchlist"
 
 const BASE_URL = "https://www.cefconnect.com/api/v3"
@@ -251,10 +251,14 @@ export async function scrapeSingleFund(
     zscore5y = computeZScore(weekly, 365 * 5)
     trend = computeTrend(weekly)
 
-    const closes = daily
-      .map((p) => toNumber(p.Data))
-      .filter((v): v is number => v !== null && v > 0)
-    const technical = computeTechnicalRating(closes)
+    // Indicators run on a distribution-adjusted series; the raw price series
+    // drifts down by roughly the payout rate and would read as a false sell.
+    const points = daily
+      .map((p) => ({ date: p.DataDate, close: toNumber(p.Data) }))
+      .filter((p): p is { date: string; close: number } => p.close !== null && p.close > 0)
+    const technical = computeTechnicalRating(
+      distributionAdjustedCloses(points, distribution_rate),
+    )
     if (technical) {
       technical_rating = technical.rating
       technical_signal = technical.signal

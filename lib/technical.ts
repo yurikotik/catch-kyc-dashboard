@@ -12,6 +12,42 @@
  * average vote maps onto 0-100 where 100 is the strongest buy.
  */
 
+export interface PricePoint {
+  /** ISO date string */
+  date: string
+  close: number
+}
+
+/**
+ * CEF Connect's price series is unadjusted for distributions: every ex-dividend
+ * date knocks the market price down, so a fund paying 12% a year drifts ~12%
+ * lower over a year even when its total return is flat. Run raw, every
+ * indicator reads that drift as weakness and high payers get pinned at 0.
+ *
+ * Rebuild a total-return-style series by accruing the distribution back in
+ * continuously: adjusted(t) = price(t) * e^(r*t), r = ln(1 + annual rate).
+ * Uses the current annual rate, so it is an approximation when a fund has
+ * changed its distribution, but it removes the systematic drag.
+ */
+export function distributionAdjustedCloses(
+  points: PricePoint[],
+  annualRatePct: number | null,
+): number[] {
+  const closes = points.map((p) => p.close)
+  if (annualRatePct === null || !(annualRatePct > 0) || points.length < 2) return closes
+
+  const start = new Date(points[0].date).getTime()
+  if (!Number.isFinite(start)) return closes
+
+  const r = Math.log(1 + annualRatePct / 100)
+  const msPerYear = 365.25 * 24 * 60 * 60 * 1000
+  return points.map((p) => {
+    const t = (new Date(p.date).getTime() - start) / msPerYear
+    if (!Number.isFinite(t) || t < 0) return p.close
+    return p.close * Math.exp(r * t)
+  })
+}
+
 export interface TechnicalResult {
   /** 0-100 composite buy rating (100 = strongest buy) */
   rating: number
