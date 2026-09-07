@@ -67,6 +67,7 @@
   --gy-heat-warm: #d9783a;
   --gy-heat-poor: var(--gy-red);
   --gy-heat-worst: #9e2c33;
+  --gy-heat-none: #4a5560;
 
   /* Page aliases (components) */
   --page-bg: var(--gy-bg);

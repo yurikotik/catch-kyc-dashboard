@@ -16,7 +16,7 @@ export async function GET() {
   const fallback: CEFSnapshot = {
     updatedAt: "",
     dataAsOf: null,
-    source: "cefconnect+barchart",
+    source: "cefconnect",
     syncStatus: "partial",
     fundsProcessed: cefData.length,
     universeCount: WATCHLIST_SYMBOLS.length,

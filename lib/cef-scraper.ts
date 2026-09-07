@@ -1,5 +1,5 @@
 import type { CEFData, ZScoreWindow } from "./cef-data"
-import { fetchBarchartTechnical } from "./barchart-scraper"
+import { computeTechnicalRating } from "./technical"
 import { WATCHLIST_SYMBOLS } from "./watchlist"
 
 const BASE_URL = "https://www.cefconnect.com/api/v3"
@@ -19,6 +19,9 @@ interface DailyPricingRow {
   NAV: number | null
   Discount: number | null
   DistributionRatePrice: number | null
+  DistributionRateNAV: number | null
+  CurrentDistribution: number | null
+  DistributionFrequency: string | null
   LeverageRatioPercentage: number | null
   AvgDailyVolume: number | null
   ZScore1Yr: number | null
@@ -54,7 +57,7 @@ async function fetchJsonWithRetry(url: string): Promise<unknown> {
         lastError = new Error(`HTTP ${res.status} from ${url}`)
         continue
       }
-      if (!res.ok) throw new Error(`HTTP ${res.status} from ${url}`)
+      if (res.status !== 200) throw new Error(`HTTP ${res.status} from ${url}`)
       return await res.json()
     } catch (err) {
       lastError = err
@@ -75,9 +78,17 @@ export async function fetchDailyPricing(): Promise<Map<string, DailyPricingRow>>
   return map
 }
 
-async function fetchPricingHistory(symbol: string): Promise<HistoryPoint[]> {
+/**
+ * CEF Connect serves different granularity per window: 5Y comes back weekly
+ * (~250 points), 1Y comes back daily (~250 points). We need both - weekly for
+ * the long z-score lookbacks, daily for the technical indicators.
+ */
+async function fetchPricingHistory(
+  symbol: string,
+  window: "5Y" | "1Y" = "5Y",
+): Promise<HistoryPoint[]> {
   const raw = (await fetchJsonWithRetry(
-    `${BASE_URL}/pricinghistory/${encodeURIComponent(symbol)}/5Y`,
+    `${BASE_URL}/pricinghistory/${encodeURIComponent(symbol)}/${window}`,
   )) as { Data?: { PriceHistory?: HistoryPoint[] } }
   const history = raw?.Data?.PriceHistory
   if (!Array.isArray(history)) throw new Error(`pricinghistory ${symbol}: unexpected shape`)
@@ -136,6 +147,43 @@ function computeTrend(history: HistoryPoint[]): number | null {
   return Math.round(Math.min(100, Math.max(0, score)))
 }
 
+const DISTRIBUTIONS_PER_YEAR: Record<string, number> = {
+  monthly: 12,
+  quarterly: 4,
+  "semi-annual": 2,
+  semiannual: 2,
+  annual: 1,
+  annually: 1,
+}
+
+/**
+ * Current distribution yield on price. Falls back to the NAV-based rate, then
+ * to annualising the declared distribution, so a missing field is reported as
+ * unknown rather than silently written out as a 0% yield.
+ */
+function resolveDistributionRate(row: DailyPricingRow): number | null {
+  if (isFiniteNumber(row.DistributionRatePrice) && row.DistributionRatePrice > 0) {
+    return Number(row.DistributionRatePrice.toFixed(2))
+  }
+  if (isFiniteNumber(row.DistributionRateNAV) && row.DistributionRateNAV > 0) {
+    return Number(row.DistributionRateNAV.toFixed(2))
+  }
+  const periods =
+    typeof row.DistributionFrequency === "string"
+      ? DISTRIBUTIONS_PER_YEAR[row.DistributionFrequency.trim().toLowerCase()]
+      : undefined
+  if (
+    periods &&
+    isFiniteNumber(row.CurrentDistribution) &&
+    row.CurrentDistribution > 0 &&
+    isFiniteNumber(row.Price) &&
+    row.Price > 0
+  ) {
+    return Number((((row.CurrentDistribution * periods) / row.Price) * 100).toFixed(2))
+  }
+  return null
+}
+
 function pickEffectiveZScore(
   z1: number | null,
   z3: number | null,
@@ -168,24 +216,36 @@ export async function scrapeSingleFund(
     ? row.Discount
     : Number((((row.Price - row.NAV) / row.NAV) * 100).toFixed(2))
 
+  const distribution_rate = resolveDistributionRate(row)
+  if (distribution_rate === null) {
+    return { fund: null, error: `${symbol}: no distribution rate available` }
+  }
+
   let zscore3y: number | null = null
   let zscore5y: number | null = null
   let zscore1yFromHistory: number | null = null
   let trend: number | null = null
-  let technical_rating = 50
+  let technical_rating: number | null = null
   let technical_signal: string | null = null
 
   try {
-    const [history, technical] = await Promise.all([
-      fetchPricingHistory(symbol),
-      fetchBarchartTechnical(symbol),
+    const [weekly, daily] = await Promise.all([
+      fetchPricingHistory(symbol, "5Y"),
+      fetchPricingHistory(symbol, "1Y"),
     ])
-    zscore1yFromHistory = computeZScore(history, 365)
-    zscore3y = computeZScore(history, 365 * 3)
-    zscore5y = computeZScore(history, 365 * 5)
-    trend = computeTrend(history)
-    technical_rating = technical.technicalRating
-    technical_signal = technical.signal
+    zscore1yFromHistory = computeZScore(weekly, 365)
+    zscore3y = computeZScore(weekly, 365 * 3)
+    zscore5y = computeZScore(weekly, 365 * 5)
+    trend = computeTrend(weekly)
+
+    const closes = daily
+      .map((p) => p.Data)
+      .filter((v): v is number => isFiniteNumber(v) && v > 0)
+    const technical = computeTechnicalRating(closes)
+    if (technical) {
+      technical_rating = technical.rating
+      technical_signal = technical.signal
+    }
   } catch (err) {
     return {
       fund: null,
@@ -211,10 +271,10 @@ export async function scrapeSingleFund(
       zscore_5y: zscore5y,
       zscore_effective: effective.value,
       zscore_window: effective.window,
-      distribution_rate: isFiniteNumber(row.DistributionRatePrice)
-        ? row.DistributionRatePrice
-        : 0,
-      leverage: isFiniteNumber(row.LeverageRatioPercentage) ? row.LeverageRatioPercentage : 0,
+      distribution_rate,
+      leverage: isFiniteNumber(row.LeverageRatioPercentage)
+        ? row.LeverageRatioPercentage
+        : null,
       trend: trend ?? 50,
       technical_rating,
       technical_signal,

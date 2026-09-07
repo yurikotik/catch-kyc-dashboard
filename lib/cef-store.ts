@@ -89,7 +89,7 @@ export function createInitialStagingSnapshot(previous: CEFSnapshot | null): CEFS
   return {
     updatedAt: "",
     dataAsOf: previous?.dataAsOf ?? null,
-    source: "cefconnect+barchart",
+    source: "cefconnect",
     syncStatus: "partial",
     fundsProcessed: funds.length,
     universeCount: WATCHLIST_SYMBOLS.length,

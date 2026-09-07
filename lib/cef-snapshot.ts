@@ -7,7 +7,8 @@ export interface CEFSnapshot {
   updatedAt: string
   /** Trading date the data refers to (from CEF Connect's LastUpdated) */
   dataAsOf: string | null
-  source: "cefconnect+barchart"
+  /** "cefconnect+barchart" appears in snapshots written before the Barchart scrape was retired */
+  source: "cefconnect" | "cefconnect+barchart"
   syncStatus: SyncStatus
   /** Funds shown on dashboard (Top 20) */
   fundsProcessed: number

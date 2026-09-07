@@ -32,7 +32,7 @@ function getColorForMetric(fund: CEFData, metric: SortMetric, rankScore?: number
 
 /** Yellow / lime / gold bands need dark ink; green / orange / red use white */
 function needsDarkInk(fund: CEFData, metric: SortMetric, rankScore?: number): boolean {
-  const score =
+  const score: number | null =
     metric === "rank"
       ? (rankScore ?? 0)
       : metric === "zscore" || metric === "zscore_1y"
@@ -45,6 +45,7 @@ function needsDarkInk(fund: CEFData, metric: SortMetric, rankScore?: number): bo
               ? fund.trend
               : fund.technical_rating
 
+  if (score === null) return false
   if (metric === "rank" || metric === "trend" || metric === "technical") {
     return score >= 20 && score < 65
   }
@@ -74,7 +75,7 @@ function getValueForMetric(fund: CEFData, metric: SortMetric, rankScore?: number
     case "trend":
       return `${fund.trend}`
     case "technical":
-      return `${fund.technical_rating}`
+      return fund.technical_rating === null ? "n/a" : `${fund.technical_rating}`
   }
 }
 
@@ -223,13 +224,15 @@ export function HeatmapCell({ fund, metric, size, rank, rankScore }: HeatmapCell
                 />
                 <MetricBox
                   label="Technical"
-                  value={`${fund.technical_rating}`}
+                  value={fund.technical_rating === null ? "n/a" : `${fund.technical_rating}`}
                   tone={
-                    fund.technical_rating >= 65
-                      ? "success"
-                      : fund.technical_rating >= 35
-                        ? "gold"
-                        : "danger"
+                    fund.technical_rating === null
+                      ? undefined
+                      : fund.technical_rating >= 65
+                        ? "success"
+                        : fund.technical_rating >= 35
+                          ? "gold"
+                          : "danger"
                   }
                 />
                 <MetricBox
@@ -239,8 +242,16 @@ export function HeatmapCell({ fund, metric, size, rank, rankScore }: HeatmapCell
                 />
                 <MetricBox
                   label="Borrowing"
-                  value={`${fund.leverage.toFixed(0)}%`}
-                  tone={fund.leverage < 25 ? "success" : fund.leverage < 35 ? "gold" : "danger"}
+                  value={fund.leverage === null ? "n/a" : `${fund.leverage.toFixed(0)}%`}
+                  tone={
+                    fund.leverage === null
+                      ? undefined
+                      : fund.leverage < 25
+                        ? "success"
+                        : fund.leverage < 35
+                          ? "gold"
+                          : "danger"
+                  }
                 />
                 <MetricBox label="Volume" value={fund.volume.toLocaleString()} />
               </div>

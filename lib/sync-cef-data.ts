@@ -15,8 +15,8 @@ type PricingMap = Awaited<ReturnType<typeof fetchDailyPricing>>
 
 /**
  * How many funds to scrape in parallel per wave. The full universe scrapes in
- * ~7s all-at-once, but we cap concurrency to stay polite to CEF Connect and
- * Barchart (avoid a burst of 48 simultaneous requests from one Vercel IP).
+ * a few seconds all-at-once, but we cap concurrency to stay polite to CEF
+ * Connect (avoid a burst of ~100 simultaneous requests from one Vercel IP).
  */
 const SCRAPE_CONCURRENCY = 12
 
@@ -90,7 +90,7 @@ function finalizeSnapshot(
   return {
     updatedAt: meta.updatedAt,
     dataAsOf: meta.dataAsOf,
-    source: "cefconnect+barchart",
+    source: "cefconnect",
     syncStatus:
       meta.missingSymbols.length === 0 && meta.staleSymbols.length === 0 && meta.errors.length === 0
         ? "complete"

@@ -34,7 +34,7 @@ const pillarMetrics: {
   {
     value: "technical",
     label: "Technical",
-    description: "Chart rating from Barchart",
+    description: "Composite chart rating from price trend",
     short: "Technical",
   },
   {
@@ -318,10 +318,6 @@ export function CEFDashboard({ funds, updatedAt, dataAsOf, syncStatus }: CEFDash
             Data from{" "}
             <span className="font-semibold text-[var(--page-on-bg)] underline decoration-[var(--gy-yellow)]">
               CEF Connect
-            </span>{" "}
-            &{" "}
-            <span className="font-semibold text-[var(--page-on-bg)] underline decoration-[var(--gy-yellow)]">
-              Barchart
             </span>
             <span className="hidden sm:inline">
               {" "}
